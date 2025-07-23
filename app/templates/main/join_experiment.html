@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}加入实验{% endblock %}
+
+{% block page_content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title text-center mb-4">加入实验</h1>
+                    
+                    <form method="post" action="{{ url_for('main.join_experiment_by_code', invite_code='') }}" id="joinForm">
+                        <div class="mb-3">
+                            <label for="invite_code" class="form-label">请输入实验邀请码</label>
+                            <input type="text" class="form-control" id="invite_code" name="invite_code" 
+                                   required pattern="[A-Z0-9]{8}" 
+                                   title="邀请码应为8位大写字母和数字的组合"
+                                   placeholder="例如：ABC123XY">
+                            <div class="form-text">邀请码为8位大写字母和数字的组合</div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">加入实验</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.getElementById('joinForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var inviteCode = document.getElementById('invite_code').value;
+    this.action = "{{ url_for('main.join_experiment_by_code', invite_code='') }}" + inviteCode;
+    this.submit();
+});
+</script>
+{% endblock %}
+{% endblock %} 

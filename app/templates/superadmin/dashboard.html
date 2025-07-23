@@ -1,0 +1,225 @@
+{% extends "superadmin/base_admin.html" %}
+
+{% block title %}控制台{% endblock %}
+
+{% block page_title %}控制台概览{% endblock %}
+
+{% block styles %}
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stats-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stats-title {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.stats-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.stats-trend {
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.trend-up {
+    color: #10b981;
+}
+
+.trend-down {
+    color: #ef4444;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.action-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    color: inherit;
+}
+
+.action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.action-content {
+    flex-grow: 1;
+}
+
+.action-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.action-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+[data-bs-theme="dark"] .stats-card,
+[data-bs-theme="dark"] .action-card {
+    background: #2a2d3e;
+}
+
+[data-bs-theme="dark"] .stats-title,
+[data-bs-theme="dark"] .action-description {
+    color: #9ca3af;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 统计卡片 -->
+<div class="stats-grid">
+    <div class="stats-card">
+        <div class="stats-icon bg-primary bg-opacity-10 text-primary">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="stats-title">总用户数</div>
+        <div class="stats-value">{{ total_users }}</div>
+        <div class="stats-trend trend-up">
+            <i class="bi bi-arrow-up"></i>
+            <span>较上月增长 5%</span>
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-icon bg-success bg-opacity-10 text-success">
+            <i class="bi bi-person-badge"></i>
+        </div>
+        <div class="stats-title">管理员数量</div>
+        <div class="stats-value">{{ admin_count }}</div>
+        <div class="stats-trend">
+            <span>维持稳定</span>
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-icon bg-info bg-opacity-10 text-info">
+            <i class="bi bi-person"></i>
+        </div>
+        <div class="stats-title">普通用户数量</div>
+        <div class="stats-value">{{ participant_count }}</div>
+        <div class="stats-trend trend-up">
+            <i class="bi bi-arrow-up"></i>
+            <span>较上月增长 8%</span>
+        </div>
+    </div>
+
+    <div class="stats-card">
+        <div class="stats-icon bg-warning bg-opacity-10 text-warning">
+            <i class="bi bi-person-check"></i>
+        </div>
+        <div class="stats-title">活跃用户数</div>
+        <div class="stats-value">{{ active_users }}</div>
+        <div class="stats-trend trend-up">
+            <i class="bi bi-arrow-up"></i>
+            <span>较上月增长 12%</span>
+        </div>
+    </div>
+</div>
+
+<!-- 快速操作 -->
+<h4 class="mb-3">快速操作</h4>
+<div class="quick-actions">
+    <a href="{{ url_for('superadmin.new_user') }}" class="action-card">
+        <div class="action-icon bg-primary bg-opacity-10 text-primary">
+            <i class="bi bi-person-plus"></i>
+        </div>
+        <div class="action-content">
+            <div class="action-title">创建新用户</div>
+            <p class="action-description">添加新的管理员或普通用户账号</p>
+        </div>
+    </a>
+
+    <a href="{{ url_for('superadmin.user_list') }}" class="action-card">
+        <div class="action-icon bg-success bg-opacity-10 text-success">
+            <i class="bi bi-people"></i>
+        </div>
+        <div class="action-content">
+            <div class="action-title">用户管理</div>
+            <p class="action-description">管理所有用户账号和权限</p>
+        </div>
+    </a>
+
+    <a href="#" class="action-card">
+        <div class="action-icon bg-info bg-opacity-10 text-info">
+            <i class="bi bi-gear"></i>
+        </div>
+        <div class="action-content">
+            <div class="action-title">系统设置</div>
+            <p class="action-description">配置系统参数和全局设置</p>
+        </div>
+    </a>
+
+    <a href="#" class="action-card">
+        <div class="action-icon bg-warning bg-opacity-10 text-warning">
+            <i class="bi bi-shield-check"></i>
+        </div>
+        <div class="action-content">
+            <div class="action-title">安全中心</div>
+            <p class="action-description">查看系统日志和安全设置</p>
+        </div>
+    </a>
+</div>
+{% endblock %} 

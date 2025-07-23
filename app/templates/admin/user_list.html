@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+/* 导出数据按钮 */
+.export-button {
+    padding: 0.8em 1.8em;
+    border: 2px solid #17C3B2;
+    position: relative;
+    overflow: hidden;
+    background-color: transparent;
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 14px;
+    transition: .3s;
+    z-index: 1;
+    font-family: inherit;
+    color: #17C3B2;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.export-button::before {
+    content: '';
+    width: 0;
+    height: 300%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: #17C3B2;
+    transition: .5s ease;
+    display: block;
+    z-index: -1;
+}
+
+.export-button:hover::before {
+    width: 105%;
+}
+
+.export-button:hover {
+    color: #fff;
+}
+
+/* 个人信息按钮 */
+.profile-button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 13px;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    min-width: 120px;
+    justify-content: center;
+}
+
+.profile-button:hover {
+    background: linear-gradient(135deg, #0284c7, #0ea5e9);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+    color: #fff;
+}
+
+.profile-button:active {
+    transform: translateY(0);
+}
+
+.profile-button i {
+    font-size: 12px;
+}
+
+/* 状态切换按钮 */
+.toggle-button {
+    position: relative;
+    background-image: linear-gradient(144deg, #af40ff, #5b42f3 50%, #00ddeb);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    padding: 8px 16px;
+    text-transform: uppercase;
+    transition: 0.3s;
+    min-width: 120px;
+}
+
+.toggle-button:hover {
+    background-image: linear-gradient(144deg, #8a1ff7, #4835d4 50%, #00b9c7);
+}
+
+/* 角色选择下拉框 */
+.role-select {
+    padding: 8px 16px;
+    border: 2px solid #7e22ce;
+    border-radius: 10px;
+    background-color: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    color: #7e22ce;
+    cursor: pointer;
+    line-height: 1.1;
+    background-image: linear-gradient(45deg, transparent 50%, #7e22ce 50%), linear-gradient(135deg, #7e22ce 50%, transparent 50%);
+    background-position: calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+}
+
+.role-select:focus {
+    outline: none;
+    border-color: #9333ea;
+    box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1);
+}
+
+.role-select:hover {
+    border-color: #9333ea;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -10px rgba(147, 51, 234, 0.3);
+}
+
+.role-select option {
+    background-color: #fff;
+    color: #1f2937;
+    padding: 8px;
+    text-align: center;
+}
+
+[data-bs-theme="dark"] .role-select option {
+    background-color: #1f2937;
+    color: #e5e7eb;
+}
+
+[data-bs-theme="dark"] .role-select {
+    color: #a855f7;
+    border-color: #a855f7;
+    background-image: linear-gradient(45deg, transparent 50%, #a855f7 50%), linear-gradient(135deg, #a855f7 50%, transparent 50%);
+}
+
+[data-bs-theme="dark"] .role-select:focus {
+    border-color: #c084fc;
+    box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.1);
+}
+
+[data-bs-theme="dark"] .role-select:hover {
+    border-color: #c084fc;
+}
+
+/* 搜索和筛选区域样式 */
+.filter-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.filter-form .form-group {
+    flex: 0 0 auto;
+    min-width: 180px;
+    margin-bottom: 0;
+}
+
+.filter-form .form-group:last-child {
+    margin-left: auto;
+}
+
+.search-input {
+    height: 36px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.filter-select {
+    height: 36px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 0.375rem 2rem 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    background-position: right 0.5rem center;
+}
+
+.filter-button {
+    height: 36px;
+    padding: 0.375rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-outline-secondary {
+    height: 36px;
+    padding: 0.375rem 1rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">用户管理</h2>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('admin.export_users') }}" class="export-button">
+                        <i class="bi bi-download"></i>导出用户数据
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搜索和筛选区域 -->
+    <div class="filter-section">
+        <form method="GET" class="filter-form">
+            <div class="form-group">
+                <input type="text" name="search" class="form-control search-input" 
+                       placeholder="搜索用户名/邮箱" value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="form-group">
+                <select name="gender" class="form-select filter-select">
+                    <option value="">性别</option>
+                    <option value="male" {% if request.args.get('gender') == 'male' %}selected{% endif %}>男</option>
+                    <option value="female" {% if request.args.get('gender') == 'female' %}selected{% endif %}>女</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <select name="age_range" class="form-select filter-select">
+                    <option value="">年龄</option>
+                    <option value="18-22" {% if request.args.get('age_range') == '18-22' %}selected{% endif %}>18-22岁</option>
+                    <option value="23-26" {% if request.args.get('age_range') == '23-26' %}selected{% endif %}>23-26岁</option>
+                    <option value="27-30" {% if request.args.get('age_range') == '27-30' %}selected{% endif %}>27-30岁</option>
+                    <option value="30+" {% if request.args.get('age_range') == '30+' %}selected{% endif %}>30岁以上</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <select name="graduation_year" class="form-select filter-select">
+                    <option value="">毕业年份</option>
+                    {% for year in range(current_year, current_year + 5) %}
+                    <option value="{{ year }}" {% if request.args.get('graduation_year') == year|string %}selected{% endif %}>
+                        {{ year }}年
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="text" name="school" class="form-control search-input" 
+                       placeholder="输入学校名称" value="{{ request.args.get('school', '') }}">
+            </div>
+            <div class="form-group">
+                <input type="text" name="college" class="form-control search-input" 
+                       placeholder="输入学院名称" value="{{ request.args.get('college', '') }}">
+            </div>
+            <div class="form-group">
+                <select name="status" class="form-select filter-select">
+                    <option value="">状态</option>
+                    <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>启用</option>
+                    <option value="disabled" {% if request.args.get('status') == 'disabled' %}selected{% endif %}>禁用</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn filter-button">
+                        <i class="bi bi-funnel"></i> 筛选
+                    </button>
+                    <a href="{{ url_for('admin.user_list') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i> 重置
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="dashboard-card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>角色</th>
+                            <th>状态</th>
+                            <th>注册时间</th>
+                            <th>最后登录</th>
+                            <th class="text-end">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users.items %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle me-2 text-secondary"></i>
+                                    {{ user.username }}
+                                </div>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge bg-{% if user.role == 'admin' %}primary{% else %}secondary{% endif %}">
+                                    {{ '管理员' if user.role == 'admin' else '普通用户' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if user.is_active %}success{% else %}danger{% endif %}">
+                                    {{ '启用' if user.is_active else '禁用' }}
+                                </span>
+                            </td>
+                            <td>{{ user.local_created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ user.local_last_login.strftime('%Y-%m-%d %H:%M') if user.local_last_login else '从未登录' }}</td>
+                            <td>
+                                {% if user != current_user %}
+                                <div class="d-flex justify-content-end gap-2 align-items-center">
+                                    {% if user.role != 'admin' %}
+                                    <a href="{{ url_for('admin.view_user_profile', id=user.id) }}" class="profile-button">
+                                        <i class="bi bi-person-lines-fill"></i>
+                                        个人信息
+                                    </a>
+                                    {% endif %}
+                                    <form action="{{ url_for('admin.toggle_user_status', id=user.id) }}" method="post" class="d-inline">
+                                        {{ form.csrf_token }}
+                                        <button type="submit" class="toggle-button">
+                                            {{ '禁用' if user.is_active else '启用' }}
+                                        </button>
+                                    </form>
+                                    
+                                    <form action="{{ url_for('admin.change_user_role', id=user.id) }}" method="post" class="d-inline">
+                                        {{ form.csrf_token }}
+                                        <select name="role" class="role-select" onchange="this.form.submit()" style="-webkit-appearance: none; -moz-appearance: none; appearance: none;">
+                                            <option value="participant" {% if user.role == 'participant' %}selected{% endif %}>普通用户</option>
+                                            <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>管理员</option>
+                                        </select>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">当前用户</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if users.pages > 1 %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        {% if users.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.user_list', page=users.prev_num) }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page in users.iter_pages() %}
+                            {% if page %}
+                                <li class="page-item {% if page == users.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('admin.user_list', page=page) }}">{{ page }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if users.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.user_list', page=users.next_num) }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

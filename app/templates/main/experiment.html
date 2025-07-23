@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}实验 - {{ super() }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+:root[data-bs-theme=light] {
+    --page-bg: #ffffff;
+}
+
+:root[data-bs-theme=dark] {
+    --page-bg: #1a1d21;
+}
+
+body {
+    background-color: var(--page-bg);
+}
+
+.navbar {
+    background-color: var(--card-bg) !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+}
+
+.feature-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+    --bs-table-hover-bg: rgba(0, 0, 0, 0.02);
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    border-bottom-width: 1px;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.8em;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: #ffffff;
+}
+
+.alert-info {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    border: 1px solid rgba(var(--bs-info-rgb), 0.2);
+    color: #055160;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.progress {
+    background-color: rgba(0, 0, 0, 0.05);
+    height: 6px;
+    border-radius: 3px;
+}
+
+.progress-bar {
+    border-radius: 3px;
+}
+
+.card-title {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.bi {
+    margin-right: 0.3rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+}
+
+.table-responsive {
+    border-radius: 0.375rem;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.display-4 {
+    color: var(--bs-primary);
+    opacity: 0.9;
+}
+
+.list-unstyled li {
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.card-footer {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 0.75rem 1.25rem;
+}
+
+.experiment-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--secondary-rgb), 0.1));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.experiment-icon i {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
+
+.copy-btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.copy-btn i {
+    font-size: 0.875rem;
+}
+
+.table > :not(caption) > * > * {
+    padding: 1rem;
+}
+
+.badge {
+    padding: 0.5em 0.75em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0">实验管理</h3>
+        {% if current_user.role == 'admin' %}
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.experiment_recycle') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-trash"></i> 回收站
+            </a>
+            <a href="{{ url_for('main.new_experiment') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> 创建新实验
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 欢迎来到实验管理页面，{{ current_user.username }}！
+        </div>
+        
+        {% if is_admin %}
+        <div class="table-responsive mt-4">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>实验名称</th>
+                        <th>创建时间</th>
+                        <th>状态</th>
+                        <th>可见性</th>
+                        <th>参与人数</th>
+                        <th>邀请码</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for experiment in experiments %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="experiment-icon me-3">
+                                    <i class="bi bi-clipboard-data"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ experiment.title }}</h6>
+                                    <small class="text-muted">{{ experiment.description[:50] }}...</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ experiment.creator.username if experiment.creator else '未知' }}</td>
+                        <td>{{ (experiment.created_at + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if experiment.status == 'active' %}
+                            <span class="badge bg-success">进行中</span>
+                            {% elif experiment.status == 'completed' %}
+                            <span class="badge bg-secondary">已结束</span>
+                            {% else %}
+                            <span class="badge bg-warning">准备中</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if experiment.visibility == 'private' %}
+                            <span class="badge bg-info">仅邀请</span>
+                            {% elif experiment.visibility == 'public' %}
+                            <span class="badge bg-success">公开</span>
+                            {% else %}
+                            <span class="badge bg-warning">邀请码</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ experiment.participations.count() }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <code class="me-2">{{ experiment.invite_code }}</code>
+                                <button class="btn btn-sm btn-outline-primary copy-btn" 
+                                        data-clipboard-text="{{ experiment.invite_code }}"
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-placement="top" 
+                                        title="复制邀请码">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('main.experiment_detail', id=experiment.id) }}" 
+                                   class="btn btn-sm btn-outline-primary"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="查看详情">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if is_admin %}
+                                <a href="{{ url_for('main.edit_experiment', id=experiment.id) }}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   title="编辑实验">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ experiment.id }}"
+                                        title="删除实验">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <!-- 删除确认对话框 -->
+                            <div class="modal fade" id="deleteModal{{ experiment.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">确认删除</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>确定要删除实验"{{ experiment.title }}"吗？实验将被移至回收站。</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                            <form action="{{ url_for('main.delete_experiment', id=experiment.id) }}" 
+                                                  method="post" 
+                                                  class="d-inline">
+                                                <button type="submit" class="btn btn-danger">确认删除</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-search display-4 text-primary mb-3"></i>
+                        <h4 class="card-title">可参与的实验</h4>
+                        <p class="card-text">浏览并参与正在招募的实验</p>
+                        <a href="{{ url_for('main.available_experiments') }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-right"></i> 进入
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-list-check display-4 text-primary mb-3"></i>
+                        <h4 class="card-title">我的预约</h4>
+                        <p class="card-text">查看和管理您预约的实验</p>
+                        <a href="{{ url_for('main.reservable_experiments') }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-right"></i> 进入
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-clock-history display-4 text-primary mb-3"></i>
+                        <h4 class="card-title">历史实验记录</h4>
+                        <p class="card-text">查看您参与过的实验记录</p>
+                        <a href="{{ url_for('main.history_experiments') }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-right"></i> 进入
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h4 class="mb-3">我参与的实验</h4>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>实验名称</th>
+                            <th>开始时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for participation in participations %}
+                        <tr>
+                            <td>{{ participation.experiment.title }}</td>
+                            <td>{{ participation.started_at.strftime('%Y-%m-%d %H:%M') if participation.started_at }}</td>
+                            <td>
+                                {% if participation.status == 'pending' %}
+                                <span class="badge bg-warning">待开始</span>
+                                {% elif participation.status == 'started' %}
+                                <span class="badge bg-success">进行中</span>
+                                {% elif participation.status == 'completed' %}
+                                <span class="badge bg-info">已完成</span>
+                                {% else %}
+                                <span class="badge bg-danger">已退出</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('main.experiment_detail', id=participation.experiment_id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-eye"></i> 查看详情
+                                </a>
+                                {% if participation.status == 'pending' %}
+                                <a href="{{ url_for('main.start_experiment', id=participation.experiment_id) }}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-play"></i> 开始实验
+                                </a>
+                                {% elif participation.status == 'started' %}
+                                <a href="{{ url_for('main.complete_experiment', id=participation.experiment_id) }}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-check"></i> 完成实验
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if available_experiments %}
+        <div class="mt-4">
+            <h4 class="mb-3">可参与的实验</h4>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for experiment in available_experiments %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ experiment.title }}</h5>
+                            <p class="card-text text-muted">{{ experiment.description[:100] }}...</p>
+                            <ul class="list-unstyled mb-3">
+                                <li class="mb-2">
+                                    <i class="bi bi-clock text-primary"></i>
+                                    <strong>预计时长：</strong>{{ experiment.duration }}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-cash text-primary"></i>
+                                    <strong>实验报酬：</strong>{{ experiment.reward }}
+                                </li>
+                                <li>
+                                    <i class="bi bi-people text-primary"></i>
+                                    <strong>当前参与人数：</strong>{{ experiment.participations.count() }}
+                                </li>
+                            </ul>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('main.experiment_detail', id=experiment.id) }}" class="btn btn-primary">
+                                    <i class="bi bi-info-circle"></i> 查看详情
+                                </a>
+                                <a href="{{ url_for('main.join_experiment', id=experiment.id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-person-plus"></i> 立即参加
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="d-block text-muted">
+                                发布于：{{ (experiment.created_at + timedelta(hours=8)).strftime('%Y-%m-%d') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化工具提示
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // 初始化剪贴板
+    var clipboard = new ClipboardJS('.copy-btn');
+    
+    clipboard.on('success', function(e) {
+        // 获取当前按钮的 Bootstrap 工具提示实例
+        var tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+        
+        // 暂时改变工具提示文本
+        var originalTitle = e.trigger.getAttribute('data-bs-original-title');
+        tooltip.setContent({ '.tooltip-inner': '已复制！' });
+        
+        // 3秒后恢复原始文本
+        setTimeout(function() {
+            tooltip.setContent({ '.tooltip-inner': originalTitle });
+        }, 3000);
+
+        e.clearSelection();
+    });
+
+    clipboard.on('error', function(e) {
+        var tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+        tooltip.setContent({ '.tooltip-inner': '复制失败，请手动复制' });
+    });
+});
+</script>
+{% endblock %} 

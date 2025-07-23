@@ -1,0 +1,19 @@
+﻿Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-WTF==1.2.1
+Flask-Mail==0.9.1
+pytz==2024.1
+Werkzeug==2.3.7
+SQLAlchemy==2.0.25
+python-dotenv==1.0.1
+email-validator==2.1.0.post1
+Pillow==10.1.0
+pandas==2.1.1
+itsdangerous==2.1.2
+Jinja2==3.1.2
+click==8.1.7
+WTForms==3.1.1
+mysqlclient==2.2.0; platform_system != "Windows" 
+# 在Windows上，建议手动安装mysqlclient
+# 对于Windows用户，可以从 https://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient 下载适合您Python版本的wheel文件

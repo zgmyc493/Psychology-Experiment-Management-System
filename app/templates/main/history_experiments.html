@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}历史实验记录 - {{ super() }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.stats-card {
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 0.1), rgba(var(--bs-info-rgb), 0.1));
+    border: none;
+    border-radius: 15px;
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats-icon i {
+    font-size: 24px;
+    color: var(--bs-primary);
+}
+
+.table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    border-bottom-width: 1px;
+    padding: 15px;
+}
+
+.table td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.badge {
+    padding: 8px 12px;
+    font-weight: 500;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.section-title i {
+    margin-right: 10px;
+    color: var(--bs-primary);
+}
+
+.alert {
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+.alert i {
+    font-size: 1.25rem;
+    margin-right: 0.5rem;
+}
+
+.experiment-title {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.experiment-title:hover {
+    color: var(--bs-primary);
+    text-decoration: none;
+}
+
+.status-badge {
+    font-size: 0.875rem;
+    padding: 0.5em 1em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card stats-card mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon me-3">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">进行中的实验</h6>
+                            <h3 class="card-title mb-0">{{ ongoing_participations|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon me-3">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">已完成的实验</h6>
+                            <h3 class="card-title mb-0">{{ completed_participations|length }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card mb-3">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon me-3">
+                            <i class="bi bi-star"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">获得积分</h6>
+                            <h3 class="card-title mb-0">{{ completed_participations|length * 10 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 进行中的实验 -->
+    <div class="table-container">
+        <h4 class="section-title">
+            <i class="bi bi-play-circle"></i>
+            进行中的实验
+        </h4>
+        {% if ongoing_participations %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>实验名称</th>
+                        <th>开始时间</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participation in ongoing_participations %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('main.experiment_detail', id=participation.experiment_id) }}" 
+                               class="experiment-title">
+                                {{ participation.experiment.title }}
+                            </a>
+                        </td>
+                        <td>{% if participation.started_at %}{{ participation.started_at.strftime('%Y-%m-%d %H:%M') }}{% else %}未开始{% endif %}</td>
+                        <td>
+                            <span class="badge bg-primary status-badge">{{ status_map[participation.status] }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 暂无进行中的实验。
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 已完成的实验 -->
+    <div class="table-container">
+        <h4 class="section-title">
+            <i class="bi bi-check2-circle"></i>
+            已完成的实验
+        </h4>
+        {% if completed_participations %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>实验名称</th>
+                        <th>开始时间</th>
+                        <th>完成时间</th>
+                        <th>状态</th>
+                        <th>获得积分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for participation in completed_participations %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('main.experiment_detail', id=participation.experiment_id) }}" 
+                               class="experiment-title">
+                                {{ participation.experiment.title }}
+                            </a>
+                        </td>
+                        <td>{% if participation.started_at %}{{ participation.started_at.strftime('%Y-%m-%d %H:%M') }}{% else %}未开始{% endif %}</td>
+                        <td>{% if participation.completed_at %}{{ participation.completed_at.strftime('%Y-%m-%d %H:%M') }}{% else %}未完成{% endif %}</td>
+                        <td>
+                            <span class="badge bg-success status-badge">{{ status_map[participation.status] }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info status-badge">+10</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> 暂无已完成的实验。
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

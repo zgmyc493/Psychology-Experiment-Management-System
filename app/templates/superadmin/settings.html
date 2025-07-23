@@ -1,0 +1,218 @@
+{% extends "superadmin/base_admin.html" %}
+
+{% block title %}系统设置{% endblock %}
+
+{% block page_title %}系统设置{% endblock %}
+
+{% block styles %}
+<style>
+.settings-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.settings-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.form-switch {
+    padding-left: 3em;
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #10b981;
+    border-color: #10b981;
+}
+
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.settings-row:last-child {
+    border-bottom: none;
+}
+
+.settings-label {
+    font-weight: 500;
+}
+
+.settings-description {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+[data-bs-theme="dark"] .settings-card {
+    background: #2a2d3e;
+}
+
+[data-bs-theme="dark"] .settings-title {
+    border-bottom-color: #4b5563;
+}
+
+[data-bs-theme="dark"] .settings-row {
+    border-bottom-color: #4b5563;
+}
+
+[data-bs-theme="dark"] .settings-description {
+    color: #9ca3af;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-card">
+    <h3 class="settings-title">
+        <i class="bi bi-shield-lock me-2"></i>
+        安全设置
+    </h3>
+    <form method="post" action="{{ url_for('superadmin.update_security_settings') }}">
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">双因素认证</div>
+                <div class="settings-description">要求超级管理员使用双因素认证登录</div>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="twoFactorAuth" name="two_factor_auth">
+            </div>
+        </div>
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">密码有效期</div>
+                <div class="settings-description">定期要求用户更改密码</div>
+            </div>
+            <select class="form-select" style="width: auto;" name="password_expiry">
+                <option value="30">30天</option>
+                <option value="60">60天</option>
+                <option value="90" selected>90天</option>
+                <option value="180">180天</option>
+            </select>
+        </div>
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">登录失败锁定</div>
+                <div class="settings-description">连续登录失败后锁定账号</div>
+            </div>
+            <select class="form-select" style="width: auto;" name="login_attempts">
+                <option value="3">3次</option>
+                <option value="5" selected>5次</option>
+                <option value="10">10次</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<div class="settings-card">
+    <h3 class="settings-title">
+        <i class="bi bi-envelope me-2"></i>
+        邮件设置
+    </h3>
+    <form method="post" action="{{ url_for('superadmin.update_mail_settings') }}">
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">SMTP服务器</div>
+                <div class="settings-description">用于发送系统邮件的SMTP服务器配置</div>
+            </div>
+            <input type="text" class="form-control" style="width: 300px;" name="smtp_server" value="smtp.example.com">
+        </div>
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">SMTP端口</div>
+                <div class="settings-description">SMTP服务器端口</div>
+            </div>
+            <input type="number" class="form-control" style="width: 150px;" name="smtp_port" value="587">
+        </div>
+        <div class="settings-row">
+            <div>
+                <div class="settings-label">发件人邮箱</div>
+                <div class="settings-description">系统邮件的发件人地址</div>
+            </div>
+            <input type="email" class="form-control" style="width: 300px;" name="sender_email" value="noreply@example.com">
+        </div>
+    </form>
+</div>
+
+<div class="settings-card">
+    <h3 class="settings-title">
+        <i class="bi bi-gear me-2"></i>
+        系统维护
+    </h3>
+    <div class="settings-row">
+        <div>
+            <div class="settings-label">数据库备份</div>
+            <div class="settings-description">立即创建数据库备份</div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="backupDatabase()">
+            <i class="bi bi-download me-2"></i>开始备份
+        </button>
+    </div>
+    <div class="settings-row">
+        <div>
+            <div class="settings-label">清理临时文件</div>
+            <div class="settings-description">清理系统产生的临时文件</div>
+        </div>
+        <button type="button" class="btn btn-warning" onclick="cleanupTempFiles()">
+            <i class="bi bi-trash me-2"></i>清理文件
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function backupDatabase() {
+    if (confirm('确定要开始数据库备份吗？')) {
+        // 发送备份请求
+        fetch('{{ url_for("superadmin.backup_database") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('数据库备份成功！');
+            } else {
+                alert('备份失败：' + data.message);
+            }
+        });
+    }
+}
+
+function cleanupTempFiles() {
+    if (confirm('确定要清理临时文件吗？')) {
+        // 发送清理请求
+        fetch('{{ url_for("superadmin.cleanup_temp_files") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('临时文件清理成功！');
+            } else {
+                alert('清理失败：' + data.message);
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

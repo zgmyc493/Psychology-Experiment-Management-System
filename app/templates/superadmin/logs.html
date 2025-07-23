@@ -1,0 +1,256 @@
+{% extends "superadmin/base_admin.html" %}
+
+{% block title %}系统日志{% endblock %}
+
+{% block page_title %}系统日志{% endblock %}
+
+{% block styles %}
+<style>
+.logs-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.logs-filters {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.log-entry {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border-left: 4px solid transparent;
+}
+
+.log-entry.level-info {
+    background: rgba(var(--bs-info-rgb), 0.1);
+    border-left-color: var(--bs-info);
+}
+
+.log-entry.level-warning {
+    background: rgba(var(--bs-warning-rgb), 0.1);
+    border-left-color: var(--bs-warning);
+}
+
+.log-entry.level-error {
+    background: rgba(var(--bs-danger-rgb), 0.1);
+    border-left-color: var(--bs-danger);
+}
+
+.log-entry.level-debug {
+    background: rgba(var(--bs-secondary-rgb), 0.1);
+    border-left-color: var(--bs-secondary);
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.log-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.log-level {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-weight: 500;
+}
+
+.level-info {
+    background: rgba(var(--bs-info-rgb), 0.1);
+    color: var(--bs-info);
+}
+
+.level-warning {
+    background: rgba(var(--bs-warning-rgb), 0.1);
+    color: var(--bs-warning);
+}
+
+.level-error {
+    background: rgba(var(--bs-danger-rgb), 0.1);
+    color: var(--bs-danger);
+}
+
+.level-debug {
+    background: rgba(var(--bs-secondary-rgb), 0.1);
+    color: var(--bs-secondary);
+}
+
+.log-time {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.log-message {
+    margin-bottom: 0.5rem;
+}
+
+.log-details {
+    font-family: monospace;
+    font-size: 0.875rem;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.5rem;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    margin-top: 0.5rem;
+}
+
+.export-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: var(--bs-primary);
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.export-button:hover {
+    background: var(--bs-primary-dark);
+    color: white;
+    transform: translateY(-2px);
+}
+
+[data-bs-theme="dark"] .logs-card {
+    background: #2a2d3e;
+}
+
+[data-bs-theme="dark"] .log-time {
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .log-details {
+    background: rgba(255, 255, 255, 0.05);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="logs-card">
+    <div class="logs-header">
+        <div class="logs-filters">
+            <select class="form-select" id="logLevel">
+                <option value="">所有级别</option>
+                <option value="info">信息</option>
+                <option value="warning">警告</option>
+                <option value="error">错误</option>
+                <option value="debug">调试</option>
+            </select>
+            <select class="form-select" id="logModule">
+                <option value="">所有模块</option>
+                <option value="auth">认证</option>
+                <option value="user">用户</option>
+                <option value="system">系统</option>
+            </select>
+            <input type="date" class="form-control" id="logDate">
+            <button type="button" class="btn btn-primary" onclick="filterLogs()">
+                <i class="bi bi-funnel"></i> 筛选
+            </button>
+        </div>
+        <a href="{{ url_for('superadmin.export_logs') }}" class="export-button">
+            <i class="bi bi-download"></i>
+            导出日志
+        </a>
+    </div>
+
+    <div id="logEntries">
+        {% for log in logs %}
+        <div class="log-entry level-{{ log.level }}">
+            <div class="log-header">
+                <div class="log-info">
+                    <span class="log-level level-{{ log.level }}">{{ log.level }}</span>
+                    <span class="log-module">{{ log.module }}</span>
+                    <span class="log-time">{{ log.timestamp }}</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-link" onclick="toggleDetails('{{ log.id }}')">
+                    详情
+                </button>
+            </div>
+            <div class="log-message">{{ log.message }}</div>
+            <div class="log-details" id="details-{{ log.id }}" style="display: none;">
+{{ log.details }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if logs.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% for page in logs.iter_pages() %}
+                {% if page %}
+                    <li class="page-item {% if page == logs.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('superadmin.logs', page=page) }}">{{ page }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleDetails(logId) {
+    const details = document.getElementById(`details-${logId}`);
+    if (details) {
+        details.style.display = details.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function filterLogs() {
+    const level = document.getElementById('logLevel').value;
+    const module = document.getElementById('logModule').value;
+    const date = document.getElementById('logDate').value;
+    
+    const url = new URL(window.location);
+    // 清除现有的查询参数
+    url.searchParams.delete('level');
+    url.searchParams.delete('module');
+    url.searchParams.delete('date');
+    
+    // 只有当选择了具体值时才添加参数
+    if (level && level !== '') url.searchParams.set('level', level);
+    if (module && module !== '') url.searchParams.set('module', module);
+    if (date && date !== '') url.searchParams.set('date', date);
+    
+    window.location = url;
+}
+
+// 从URL参数中恢复筛选条件
+document.addEventListener('DOMContentLoaded', function() {
+    const url = new URL(window.location);
+    const level = url.searchParams.get('level');
+    const module = url.searchParams.get('module');
+    const date = url.searchParams.get('date');
+    
+    if (level) document.getElementById('logLevel').value = level;
+    if (module) document.getElementById('logModule').value = module;
+    if (date) document.getElementById('logDate').value = date;
+});
+</script>
+{% endblock %} 

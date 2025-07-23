@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}管理面板{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="dashboard">
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon text-primary">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="text-secondary">总用户数</div>
+                                <h3 class="mb-0">{{ total_users }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon text-success">
+                                <i class="bi bi-person-check-fill"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="text-secondary">活跃用户</div>
+                                <h3 class="mb-0">{{ active_users }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon text-info">
+                                <i class="bi bi-clipboard-data"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="text-secondary">实验数量</div>
+                                <h3 class="mb-0">{{ total_experiments }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon text-warning">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="text-secondary">完成率</div>
+                                <h3 class="mb-0">{{ completion_rate }}%</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title mb-0">最近用户活动</h5>
+                            <a href="{{ url_for('admin.user_list') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-people me-1"></i>管理用户
+                            </a>
+                        </div>
+                        {% if recent_activities %}
+                            <div class="list-group">
+                                {% for activity in recent_activities %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ activity.user.username }}</h6>
+                                        <small class="text-muted">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ activity.description }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center text-secondary py-4">
+                                <i class="bi bi-inbox display-4 mb-3"></i>
+                                <p class="mb-0">暂无活动记录</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title mb-0">快速操作</h5>
+                        </div>
+                        <div class="list-group">
+                            <a href="{{ url_for('admin.user_list') }}" class="list-group-item list-group-item-action">
+                                <i class="bi bi-people me-2"></i>用户管理
+                            </a>
+                            <a href="{{ url_for('main.new_experiment') }}" class="list-group-item list-group-item-action">
+                                <i class="bi bi-plus-circle me-2"></i>创建实验
+                            </a>
+                            <a href="{{ url_for('main.experiment') }}" class="list-group-item list-group-item-action">
+                                <i class="bi bi-clipboard-data me-2"></i>实验管理
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

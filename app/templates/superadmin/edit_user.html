@@ -1,0 +1,118 @@
+{% extends "superadmin/base_admin.html" %}
+
+{% block title %}编辑用户{% endblock %}
+
+{% block page_title %}编辑用户{% endblock %}
+
+{% block styles %}
+<style>
+.edit-user-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+[data-bs-theme="dark"] .edit-user-card {
+    background: #2a2d3e;
+}
+
+[data-bs-theme="dark"] .form-text {
+    color: #9ca3af;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-user-card">
+    <form method="post" action="{{ url_for('superadmin.edit_user', id=user.id) }}">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">用户名</label>
+                <input type="text" class="form-control" name="username" value="{{ user.username }}" required>
+                <div class="form-text">3-20个字符，只能包含字母、数字和下划线</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">邮箱</label>
+                <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                <div class="form-text">用于接收系统通知和重置密码</div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">新密码</label>
+                <input type="password" class="form-control" name="password">
+                <div class="form-text">如果不修改密码请留空</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">确认新密码</label>
+                <input type="password" class="form-control" id="confirmPassword">
+                <div class="form-text">再次输入新密码以确认</div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">用户角色</label>
+                <select class="form-select" name="role" required {% if user.id == current_user.id %}disabled{% endif %}>
+                    {% if user.role == 'superadmin' %}
+                    <option value="superadmin" selected>超级管理员</option>
+                    {% else %}
+                    <option value="participant" {% if user.role == 'participant' %}selected{% endif %}>普通用户</option>
+                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>管理员</option>
+                    {% endif %}
+                </select>
+                <div class="form-text">{% if user.id == current_user.id %}不能修改自己的角色{% else %}选择用户的权限级别{% endif %}</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">账号状态</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="is_active" {% if user.is_active %}checked{% endif %} 
+                           {% if user.id == current_user.id %}disabled{% endif %}>
+                    <label class="form-check-label">账号已激活</label>
+                </div>
+                <div class="form-text">{% if user.id == current_user.id %}不能修改自己的状态{% else %}未激活的账号无法登录系统{% endif %}</div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <a href="{{ url_for('superadmin.user_list') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-2"></i>返回用户列表
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>保存修改
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const password = document.querySelector('input[name="password"]');
+    const confirmPassword = document.getElementById('confirmPassword');
+    
+    form.addEventListener('submit', function(e) {
+        if (password.value || confirmPassword.value) {
+            if (password.value !== confirmPassword.value) {
+                e.preventDefault();
+                alert('两次输入的密码不匹配');
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

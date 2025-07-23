@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}邀请管理{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header">
+        <h3 class="card-title mb-0">邀请管理</h3>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs mb-4" id="invitationTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button">
+                    待回应 <span class="badge bg-warning">{{ invitations|selectattr('status', 'equalto', 'pending')|list|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="accepted-tab" data-bs-toggle="tab" data-bs-target="#accepted" type="button">
+                    已接受 <span class="badge bg-success">{{ invitations|selectattr('status', 'equalto', 'accepted')|list|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button">
+                    已拒绝 <span class="badge bg-danger">{{ invitations|selectattr('status', 'equalto', 'rejected')|list|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button">
+                    已取消 <span class="badge bg-secondary">{{ invitations|selectattr('status', 'equalto', 'cancelled')|list|length }}</span>
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="invitationTabsContent">
+            {% for status in ['pending', 'accepted', 'rejected', 'cancelled'] %}
+            <div class="tab-pane fade {% if status == 'pending' %}show active{% endif %}" 
+                 id="{{ status }}" role="tabpanel">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>实验名称</th>
+                                <th>被邀请者</th>
+                                <th>邀请时间</th>
+                                <th>回应时间</th>
+                                <th>备注</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set status_invitations = invitations|selectattr('status', 'equalto', status)|list %}
+                            {% if status_invitations %}
+                                {% for invitation in status_invitations %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('main.experiment_detail', id=invitation.experiment_id) }}">
+                                            {{ invitation.experiment.title }}
+                                        </a>
+                                    </td>
+                                    <td>{{ invitation.user.username }}</td>
+                                    <td>{{ invitation.invited_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if invitation.responded_at %}
+                                        {{ invitation.responded_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if invitation.response_note %}
+                                        <button type="button" class="btn btn-sm btn-link" 
+                                                data-bs-toggle="tooltip" 
+                                                title="{{ invitation.response_note }}">
+                                            查看备注
+                                        </button>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if invitation.status == 'pending' %}
+                                        <form action="{{ url_for('main.cancel_invitation', id=invitation.id) }}" 
+                                              method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-danger" 
+                                                    onclick="return confirm('确定要取消这个邀请吗？')">
+                                                <i class="bi bi-x-circle"></i> 取消邀请
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <button type="button" class="btn btn-sm btn-secondary" disabled>
+                                            {{ invitation.status_display }}
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">暂无{{ status_map[status] }}的邀请</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化所有工具提示
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %} 

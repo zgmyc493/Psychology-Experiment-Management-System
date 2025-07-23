@@ -1,0 +1,810 @@
+{% extends "base.html" %}
+
+{% block title %}首页{% endblock %}
+
+{% block content %}
+{% if current_user.is_authenticated %}
+<div class="container" style="margin-top: 2rem;">
+    {% if current_user.role == 'admin' %}
+        <!-- 管理员面板 -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="card-title mb-1">参与者数量</h5>
+                                <p class="card-text display-6 mb-0">{{ stats.participant_count }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon">
+                                <i class="bi bi-clipboard-data"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="card-title mb-1">实验数量</h5>
+                                <p class="card-text display-6 mb-0">{{ stats.experiment_count }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="card-title mb-1">完成率</h5>
+                                <p class="card-text display-6 mb-0">{{ stats.completion_rate }}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- 参与者面板 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon">
+                                <i class="bi bi-clipboard-check"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="card-title mb-1">参与实验</h5>
+                                <p class="card-text display-6 mb-0">{% if user_stats is defined %}{{ user_stats.total_experiments }}{% else %}0{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon">
+                                <i class="bi bi-check2-circle"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="card-title mb-1">完成实验</h5>
+                                <p class="card-text display-6 mb-0">{% if user_stats is defined %}{{ user_stats.completed_experiments }}{% else %}0{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="card-title mb-1">完成率</h5>
+                                <p class="card-text display-6 mb-0">{% if user_stats is defined %}{{ user_stats.completion_rate }}{% else %}0{% endif %}%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="dashboard-icon">
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="card-title mb-1">积分</h5>
+                                <p class="card-text display-6 mb-0">{% if user_stats is defined %}{{ user_stats.points }}{% else %}0{% endif %}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速加入实验 -->
+        <div class="card dashboard-card mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning-charge me-2"></i>
+                    快速加入实验
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('main.join_experiment_by_code', invite_code='') }}" id="quickJoinForm" class="row g-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent">
+                                <i class="bi bi-key"></i>
+                            </span>
+                            <input type="text" class="form-control" id="invite_code" name="invite_code" 
+                                   required pattern="[A-Za-z0-9]{8}" 
+                                   placeholder="输入8位邀请码"
+                                   title="邀请码应为8位字母和数字的组合">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            加入实验
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% else %}
+<!-- 未登录用户显示欢迎信息 -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="hero-content">
+                    <div class="hero-title-wrapper">
+                        <h1 class="hero-title">
+                            心理学实验管理系统
+                        </h1>
+                        <div class="hero-badges">
+                            <span class="hero-badge">
+                                <i class="bi bi-shield-check"></i>
+                                专业
+                            </span>
+                            <span class="hero-badge">
+                                <i class="bi bi-lightning-charge"></i>
+                                便捷
+                            </span>
+                            <span class="hero-badge">
+                                <i class="bi bi-graph-up"></i>
+                                高效
+                            </span>
+                        </div>
+                    </div>
+                    <p class="hero-subtitle">
+                        为心理学研究提供专业的实验管理平台，让实验数据收集和分析更加便捷高效
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-primary me-3">
+                            <i class="bi bi-person-plus me-2"></i>立即注册
+                        </a>
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>登录
+                        </a>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">1000+</div>
+                            <div class="stat-label">注册用户</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">50+</div>
+                            <div class="stat-label">进行中的实验</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">98%</div>
+                            <div class="stat-label">用户好评</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <svg viewBox="0 0 800 600" class="hero-svg">
+                    <defs>
+                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#4338ca;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#6366f1;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#93c5fd;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- 大脑轮廓 -->
+                    <path d="M400,100 C550,100 650,250 650,400 C650,550 550,600 400,600 C250,600 150,550 150,400 C150,250 250,100 400,100" 
+                          fill="url(#grad1)" opacity="0.1"/>
+                    
+                    <!-- 连接线和节点 -->
+                    <g class="nodes" opacity="0.8">
+                        <circle cx="300" cy="250" r="20" fill="url(#grad2)"/>
+                        <circle cx="500" cy="250" r="15" fill="url(#grad2)"/>
+                        <circle cx="400" cy="350" r="25" fill="url(#grad2)"/>
+                        <circle cx="250" cy="400" r="18" fill="url(#grad2)"/>
+                        <circle cx="550" cy="400" r="22" fill="url(#grad2)"/>
+                        
+                        <path d="M300,250 L500,250" stroke="url(#grad2)" stroke-width="3" fill="none"/>
+                        <path d="M300,250 L400,350" stroke="url(#grad2)" stroke-width="3" fill="none"/>
+                        <path d="M500,250 L400,350" stroke="url(#grad2)" stroke-width="3" fill="none"/>
+                        <path d="M400,350 L250,400" stroke="url(#grad2)" stroke-width="3" fill="none"/>
+                        <path d="M400,350 L550,400" stroke="url(#grad2)" stroke-width="3" fill="none"/>
+                    </g>
+                    
+                    <!-- 装饰性图形 -->
+                    <g class="decorative" opacity="0.6">
+                        <circle cx="200" cy="200" r="5" fill="#60a5fa"/>
+                        <circle cx="600" cy="200" r="8" fill="#60a5fa"/>
+                        <circle cx="300" cy="500" r="6" fill="#60a5fa"/>
+                        <circle cx="500" cy="500" r="7" fill="#60a5fa"/>
+                        <circle cx="400" cy="150" r="4" fill="#60a5fa"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>为什么选择我们？</h2>
+            <p>专业的实验管理平台，助力您的研究事业</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h3 class="feature-title">安全可靠</h3>
+                <ul class="feature-list">
+                    <li>数据加密存储</li>
+                    <li>严格的访问控制</li>
+                    <li>定期安全审计</li>
+                    <li>完整的数据备份</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h3 class="feature-title">数据分析</h3>
+                <ul class="feature-list">
+                    <li>实时数据统计</li>
+                    <li>多维度分析</li>
+                    <li>可视化图表</li>
+                    <li>导出报告功能</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3 class="feature-title">协作管理</h3>
+                <ul class="feature-list">
+                    <li>多人协作模式</li>
+                    <li>角色权限管理</li>
+                    <li>实时消息通知</li>
+                    <li>操作日志记录</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block styles %}
+<style>
+body {
+    background: var(--bg-color);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.hero-section {
+    min-height: calc(100vh - 72px);
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    margin: 0;
+    padding: 6rem 0 4rem;  /* 增加顶部内边距 */
+    overflow: hidden;
+    width: 100vw;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    position: relative;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    width: 150%;
+    height: 150%;
+    background: 
+        radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        url("{{ url_for('static', filename='image/page-bg.jpg') }}") center/cover;
+    opacity: 0.1;
+    animation: slow-drift 30s linear infinite;
+    mix-blend-mode: overlay;
+    transform-origin: center center;
+}
+
+.hero-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.2) 0%, transparent 100%);
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 0;
+    max-width: 600px;
+}
+
+.hero-title-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+}
+
+.hero-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60%;
+    height: 4px;
+    background: linear-gradient(90deg, #60a5fa, transparent);
+    border-radius: 2px;
+}
+
+.hero-badges {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.hero-badge {
+    padding: 0.75rem 1.5rem;
+    border-radius: 9999px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.hero-badge i {
+    font-size: 1.25rem;
+}
+
+.hero-badge:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.hero-buttons {
+    margin-bottom: 4rem;
+}
+
+.hero-buttons .btn {
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background: #fff;
+    color: #4338ca;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.btn-outline {
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.stat-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.features-section {
+    position: relative;
+    background: var(--bg-color);
+    padding: 6rem 0;
+    margin: 0 -15px;  /* 抵消container的padding */
+    width: 100vw;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    position: relative;
+}
+
+.features-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(67, 56, 202, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.section-title h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title p {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+    opacity: 0.8;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    padding: 0 1rem;
+}
+
+@media (max-width: 1200px) {
+    .features-grid {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+}
+
+.feature-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-color);
+    padding: 2rem;
+    margin: 0;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
+    border-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.feature-icon {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #4338ca, #6366f1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+    box-shadow: 0 8px 16px rgba(67, 56, 202, 0.2);
+}
+
+.feature-icon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.4) 100%);
+    border-radius: 16px;
+}
+
+.feature-icon i {
+    color: #fff;
+    font-size: 1.5rem;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.feature-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.feature-list li {
+    margin-bottom: 0.75rem;
+    padding-left: 1.75rem;
+    position: relative;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.feature-list li::before {
+    content: "•";
+    color: #4338ca;
+    position: absolute;
+    left: 0;
+    font-size: 1.5rem;
+    line-height: 1;
+    top: -0.25rem;
+}
+
+.dashboard-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--secondary-rgb), 0.1));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover .dashboard-icon {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.2), rgba(var(--secondary-rgb), 0.2));
+}
+
+.dashboard-icon i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.card-header {
+    padding: 1.25rem;
+    background: transparent;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.input-group-text {
+    border-right: none;
+}
+
+.input-group .form-control {
+    border-left: none;
+}
+
+.input-group .form-control:focus {
+    border-color: var(--border-color);
+    box-shadow: none;
+}
+
+.input-group .form-control:focus + .input-group-text {
+    border-color: var(--border-color);
+}
+
+/* 深色主题适配 */
+[data-theme="dark"] .dashboard-card {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dashboard-icon {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+}
+
+[data-theme="dark"] .dashboard-icon i {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .card-header {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .input-group-text {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .form-control {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .form-control:focus {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+@keyframes slow-drift {
+    0% {
+        transform: rotate(0deg) scale(1.5);
+    }
+    100% {
+        transform: rotate(360deg) scale(1.5);
+    }
+}
+
+.hero-svg {
+    width: 100%;
+    height: auto;
+    max-width: 700px;
+    margin-left: auto;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
+}
+
+@media (max-width: 991px) {
+    .hero-section {
+        padding: 5rem 0 3rem;  /* 移动端适配 */
+        text-align: center;
+    }
+    
+    .hero-content {
+        margin: 0 auto;
+    }
+    
+    .hero-badges {
+        justify-content: center;
+    }
+    
+    .hero-buttons {
+        justify-content: center;
+    }
+    
+    .stats-grid {
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1.5rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+}
+
+/* 登录后的仪表盘样式 */
+.container {
+    padding-top: 1.5rem;  /* 添加顶部内边距 */
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('quickJoinForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var inviteCode = document.getElementById('invite_code').value;
+    if (inviteCode) {
+        this.action = "{{ url_for('main.join_experiment_by_code', invite_code='') }}" + inviteCode;
+        this.submit();
+    }
+});
+
+// 添加输入框焦点效果
+const inviteCodeInput = document.getElementById('invite_code');
+if (inviteCodeInput) {
+    inviteCodeInput.addEventListener('focus', function() {
+        this.parentElement.classList.add('border-primary');
+    });
+    
+    inviteCodeInput.addEventListener('blur', function() {
+        this.parentElement.classList.remove('border-primary');
+    });
+}
+</script>
+{% endblock %}

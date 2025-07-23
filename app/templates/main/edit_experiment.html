@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}编辑实验 - {{ super() }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .tab-pane {
+        padding: 1.5rem 0;
+    }
+    .form-step-indicator {
+        display: flex;
+        margin-bottom: 2rem;
+    }
+    .step-item {
+        flex: 1;
+        text-align: center;
+        padding: 1rem 0;
+        position: relative;
+        cursor: pointer;
+    }
+    .step-item.active {
+        font-weight: bold;
+        color: var(--bs-primary);
+    }
+    .step-item::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: var(--bs-border-color);
+    }
+    .step-item.active::after {
+        background-color: var(--bs-primary);
+    }
+    .step-item.completed::after {
+        background-color: var(--bs-success);
+    }
+    .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--bs-light);
+        border: 1px solid var(--bs-border-color);
+        margin-right: 0.5rem;
+    }
+    .step-item.active .step-number {
+        background-color: var(--bs-primary);
+        color: white;
+        border-color: var(--bs-primary);
+    }
+    .step-item.completed .step-number {
+        background-color: var(--bs-success);
+        color: white;
+        border-color: var(--bs-success);
+    }
+    .form-floating > .form-control {
+        padding-top: 1.625rem;
+        padding-bottom: 0.625rem;
+    }
+    .toggle-container {
+        display: flex;
+        align-items: center;
+    }
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+        margin-right: 10px;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 24px;
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+        background-color: var(--bs-primary);
+    }
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">编辑实验</h3>
+            <div>
+                <span class="badge bg-primary">ID: {{ experiment.id }}</span>
+                {% if experiment.status == 'draft' %}
+                <span class="badge bg-secondary">草稿</span>
+                {% elif experiment.status == 'active' %}
+                <span class="badge bg-success">进行中</span>
+                {% elif experiment.status == 'completed' %}
+                <span class="badge bg-info">已完成</span>
+                {% else %}
+                <span class="badge bg-danger">已取消</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="form-step-indicator">
+            <div class="step-item active" data-step="basic" onclick="switchTab('basic')">
+                <span class="step-number">1</span>
+                <span class="d-none d-md-inline">基本信息</span>
+            </div>
+            <div class="step-item" data-step="settings" onclick="switchTab('settings')">
+                <span class="step-number">2</span>
+                <span class="d-none d-md-inline">实验设置</span>
+            </div>
+            <div class="step-item" data-step="visibility" onclick="switchTab('visibility')">
+                <span class="step-number">3</span>
+                <span class="d-none d-md-inline">可见性与招募</span>
+            </div>
+            <div class="step-item" data-step="advanced" onclick="switchTab('advanced')">
+                <span class="step-number">4</span>
+                <span class="d-none d-md-inline">高级选项</span>
+            </div>
+        </div>
+        
+        <form method="POST" action="{{ url_for('main.edit_experiment', id=experiment.id) }}" id="experimentForm">
+            {{ form.hidden_tag() }}
+            <div class="tab-content">
+                <!-- 基本信息 -->
+                <div class="tab-pane active" id="basic-tab">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 请填写实验的基本信息，包括标题、描述和类别。
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="title" name="title" value="{{ experiment.title }}" required>
+                            <label for="title">实验标题</label>
+                        </div>
+                        <small class="text-muted">实验标题应该简明扼要地描述实验内容（50字以内）</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-floating">
+                            <textarea class="form-control" id="description" name="description" style="height: 120px" required>{{ experiment.description }}</textarea>
+                            <label for="description">实验描述</label>
+                        </div>
+                        <small class="text-muted">详细描述实验的目的、流程和注意事项，帮助参与者了解实验（1000字以内）</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">实验类别</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="认知心理学" id="category1" {{ 'checked' if '认知心理学' in experiment.categories else '' }}>
+                                    <label class="form-check-label" for="category1">认知心理学</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="发展心理学" id="category2" {{ 'checked' if '发展心理学' in experiment.categories else '' }}>
+                                    <label class="form-check-label" for="category2">发展心理学</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="社会心理学" id="category3" {{ 'checked' if '社会心理学' in experiment.categories else '' }}>
+                                    <label class="form-check-label" for="category3">社会心理学</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="临床心理学" id="category4" {{ 'checked' if '临床心理学' in experiment.categories else '' }}>
+                                    <label class="form-check-label" for="category4">临床心理学</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="人格心理学" id="category5" {{ 'checked' if '人格心理学' in experiment.categories else '' }}>
+                                    <label class="form-check-label" for="category5">人格心理学</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="其他" id="category6" {{ 'checked' if '其他' in experiment.categories else '' }}>
+                                    <label class="form-check-label" for="category6">其他</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 实验设置 -->
+                <div class="tab-pane" id="settings-tab" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 设置实验的时长、报酬和参与者要求等信息。
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="duration" name="duration" value="{{ experiment.duration }}" required>
+                                <label for="duration">预计时长</label>
+                            </div>
+                            <small class="text-muted">例如：30分钟、1小时等</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="reward" name="reward" value="{{ experiment.reward }}" required>
+                                <label for="reward">实验报酬</label>
+                            </div>
+                            <small class="text-muted">例如：50元、10积分等</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">实验要求</label>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control" id="min_age" name="min_age" value="{{ experiment.min_age or '' }}" placeholder="最小年龄">
+                            <label for="min_age">最小年龄要求</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control" id="max_age" name="max_age" value="{{ experiment.max_age or '' }}" placeholder="最大年龄">
+                            <label for="max_age">最大年龄要求</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="required_gender" name="required_gender">
+                                <option value="any" {{ 'selected' if experiment.required_gender == 'any' else '' }}>不限</option>
+                                <option value="male" {{ 'selected' if experiment.required_gender == 'male' else '' }}>男性</option>
+                                <option value="female" {{ 'selected' if experiment.required_gender == 'female' else '' }}>女性</option>
+                            </select>
+                            <label for="required_gender">性别要求</label>
+                        </div>
+                        <div class="form-floating">
+                            <textarea class="form-control" id="requirements" name="requirements" style="height: 100px">{{ experiment.requirements or '' }}</textarea>
+                            <label for="requirements">其他要求</label>
+                        </div>
+                        <small class="text-muted">其他特殊要求，如教育背景、专业知识等</small>
+                    </div>
+                </div>
+                
+                <!-- 可见性与招募 -->
+                <div class="tab-pane" id="visibility-tab" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 设置实验的可见性和招募方式。
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">可见性设置</label>
+                        <div class="list-group">
+                            <label class="list-group-item d-flex gap-2">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="visibility" id="visibility_public" value="public" {{ 'checked' if experiment.visibility == 'public' else '' }}>
+                                <span>
+                                    <strong>公开</strong>
+                                    <small class="d-block text-muted">所有用户都可以在可参与实验列表中看到此实验</small>
+                                </span>
+                            </label>
+                            <label class="list-group-item d-flex gap-2">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="visibility" id="visibility_private" value="private" {{ 'checked' if experiment.visibility == 'private' else '' }}>
+                                <span>
+                                    <strong>仅邀请</strong>
+                                    <small class="d-block text-muted">只有被邀请的用户才能看到和参与此实验，用户可以接受或拒绝邀请</small>
+                                </span>
+                            </label>
+                            <label class="list-group-item d-flex gap-2">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="visibility" id="visibility_code" value="invitecode" {{ 'checked' if experiment.visibility == 'invitecode' or experiment.visibility == 'code_only' else '' }}>
+                                <span>
+                                    <strong>邀请码</strong>
+                                    <small class="d-block text-muted">用户需要通过邀请码才能参与此实验，在列表中对普通用户不可见</small>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4" id="inviteCodeGroup" style="display: none;">
+                        <label class="form-label">邀请码</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="invite_code" name="invite_code" value="{{ experiment.invite_code or '' }}" placeholder="设置8位邀请码" maxlength="8">
+                            <button class="btn btn-outline-secondary" type="button" onclick="generateRandomCode()">生成随机邀请码</button>
+                        </div>
+                        <small class="text-muted">如果选择"邀请码"可见性，需要设置8位邀请码</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">招募设置</label>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control" id="max_participants" name="max_participants" value="{{ experiment.max_participants or '' }}" min="1">
+                            <label for="max_participants">最大参与人数</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="datetime-local" class="form-control" id="scheduled_start_time" name="scheduled_start_time" 
+                                value="{{ experiment.scheduled_start_time.strftime('%Y-%m-%dT%H:%M') if experiment.scheduled_start_time else '' }}"
+                                {% if now %}min="{{ now.strftime('%Y-%m-%dT%H:%M') }}"{% endif %}>
+                            <label for="scheduled_start_time">计划开始时间</label>
+                            <div class="form-text mt-1">设置实验自动开始招募的时间，留空则需手动开启</div>
+                        </div>
+                        <small class="text-muted">留空表示不限制参与人数</small>
+                        
+                        <div class="mt-3 toggle-container">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="auto_close" {{ 'checked' if experiment.auto_close else '' }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>达到最大参与人数后自动关闭招募</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 高级选项 -->
+                <div class="tab-pane" id="advanced-tab" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 配置实验的高级选项和附加功能。
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">实验链接</label>
+                        <div class="form-floating">
+                            <input type="url" class="form-control" id="external_url" name="external_url" value="{{ experiment.external_url or '' }}">
+                            <label for="external_url">外部实验链接</label>
+                        </div>
+                        <small class="text-muted">如果您的实验在外部平台上进行，请提供链接</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">自动化设置</label>
+                        <div class="toggle-container mb-2">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="auto_approve" {{ 'checked' if experiment.auto_approve else '' }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>自动批准参与申请</span>
+                        </div>
+                        <div class="toggle-container mb-2">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="send_reminder" {{ 'checked' if experiment.send_reminder else '' }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>发送参与提醒</span>
+                        </div>
+                        <div class="toggle-container">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="allow_withdrawal" {{ 'checked' if experiment.allow_withdrawal else '' }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>允许参与者中途退出</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">备注信息</label>
+                        <div class="form-floating">
+                            <textarea class="form-control" id="notes" name="notes" style="height: 100px">{{ experiment.notes or '' }}</textarea>
+                            <label for="notes">管理员备注</label>
+                        </div>
+                        <small class="text-muted">仅管理员可见的备注信息</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <div>
+                    <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;" onclick="prevStep()">
+                        <i class="bi bi-arrow-left"></i> 上一步
+                    </button>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.experiment_detail', id=experiment.id) }}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-x-circle"></i> 取消
+                    </a>
+                    <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                        下一步 <i class="bi bi-arrow-right"></i>
+                    </button>
+                    <button type="submit" class="btn btn-success" id="saveBtn" style="display: none;">
+                        <i class="bi bi-check-circle"></i> 保存更改
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // 当前步骤
+    let currentStep = 'basic';
+    const steps = ['basic', 'settings', 'visibility', 'advanced'];
+    
+    // 切换标签页
+    function switchTab(step) {
+        // 隐藏所有标签页
+        document.querySelectorAll('.tab-pane').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        
+        // 显示当前标签页
+        document.getElementById(`${step}-tab`).style.display = 'block';
+        
+        // 更新步骤样式
+        document.querySelectorAll('.step-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`.step-item[data-step="${step}"]`).classList.add('active');
+        
+        // 更新当前步骤
+        currentStep = step;
+        
+        // 更新按钮
+        updateButtons();
+        
+        // 更新已完成步骤样式
+        updateCompletedSteps();
+    }
+    
+    // 下一步
+    function nextStep() {
+        const currentIndex = steps.indexOf(currentStep);
+        if (currentIndex < steps.length - 1) {
+            switchTab(steps[currentIndex + 1]);
+        }
+    }
+    
+    // 上一步
+    function prevStep() {
+        const currentIndex = steps.indexOf(currentStep);
+        if (currentIndex > 0) {
+            switchTab(steps[currentIndex - 1]);
+        }
+    }
+    
+    // 更新按钮状态
+    function updateButtons() {
+        const currentIndex = steps.indexOf(currentStep);
+        
+        // 上一步按钮
+        if (currentIndex > 0) {
+            document.getElementById('prevBtn').style.display = 'block';
+        } else {
+            document.getElementById('prevBtn').style.display = 'none';
+        }
+        
+        // 下一步和保存按钮
+        if (currentIndex < steps.length - 1) {
+            document.getElementById('nextBtn').style.display = 'block';
+            document.getElementById('saveBtn').style.display = 'none';
+        } else {
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'block';
+        }
+    }
+    
+    // 更新已完成步骤样式
+    function updateCompletedSteps() {
+        const currentIndex = steps.indexOf(currentStep);
+        
+        steps.forEach((step, index) => {
+            const stepElement = document.querySelector(`.step-item[data-step="${step}"]`);
+            if (index < currentIndex) {
+                stepElement.classList.add('completed');
+            } else {
+                stepElement.classList.remove('completed');
+            }
+        });
+    }
+    
+    // 显示或隐藏邀请码输入框
+    function toggleInviteCodeGroup() {
+        const visibilityCodeRadio = document.getElementById('visibility_code');
+        const inviteCodeGroup = document.getElementById('inviteCodeGroup');
+        
+        if (visibilityCodeRadio.checked) {
+            inviteCodeGroup.style.display = 'block';
+        } else {
+            inviteCodeGroup.style.display = 'none';
+        }
+    }
+    
+    // 生成随机邀请码
+    function generateRandomCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        document.getElementById('invite_code').value = code;
+    }
+    
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化按钮状态
+        updateButtons();
+        
+        // 初始化邀请码输入框显示状态
+        toggleInviteCodeGroup();
+        
+        // 添加可见性单选按钮变更事件监听
+        const visibilityRadios = document.querySelectorAll('input[name="visibility"]');
+        visibilityRadios.forEach(radio => {
+            radio.addEventListener('change', toggleInviteCodeGroup);
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}可参与的实验 - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 可参与的实验 -->
+    <div class="card shadow">
+        <div class="card-header">
+            <h3 class="card-title mb-0">可参与的公开实验</h3>
+        </div>
+        <div class="card-body">
+            {% if experiments %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for experiment in experiments %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ experiment.title }}</h5>
+                            <p class="card-text text-muted">{{ experiment.description[:100] }}...</p>
+                            <ul class="list-unstyled mb-3">
+                                <li class="mb-2">
+                                    <i class="bi bi-clock text-primary"></i>
+                                    <strong>预计时长：</strong>{{ experiment.duration }}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-cash text-primary"></i>
+                                    <strong>实验报酬：</strong>{{ experiment.reward }}
+                                </li>
+                            </ul>
+                            <div class="d-grid">
+                                <a href="{{ url_for('main.experiment_detail', id=experiment.id) }}" class="btn btn-primary">
+                                    <i class="bi bi-info-circle"></i> 查看详情
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <small class="text-muted">
+                                <i class="bi bi-calendar"></i> 
+                                发布于：{{ (experiment.created_at + timedelta(hours=8)).strftime('%Y-%m-%d') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-clipboard-x display-1 text-muted"></i>
+                <h4 class="mt-3">暂无可参与的实验</h4>
+                <p class="text-muted">请稍后再来查看，或联系管理员了解更多信息。</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

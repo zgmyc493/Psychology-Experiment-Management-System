@@ -1,0 +1,572 @@
+{% extends "superadmin/base_admin.html" %}
+
+{% block title %}用户管理{% endblock %}
+
+{% block page_title %}用户管理{% endblock %}
+
+{% block styles %}
+<style>
+.filter-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.filter-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.filter-item {
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #4b5563;
+}
+
+.role-filter {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.role-btn {
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: none;
+    color: #4b5563;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.role-btn:hover {
+    background: #f3f4f6;
+}
+
+.role-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+.status-filter {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.status-btn {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: none;
+    color: #4b5563;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.status-btn:hover {
+    background: #f3f4f6;
+}
+
+.status-btn.active {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+}
+
+.search-input {
+    padding-left: 2.5rem;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.clear-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: none;
+    color: #4b5563;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.clear-btn:hover {
+    background: #f3f4f6;
+}
+
+.apply-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: white;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.apply-btn:hover {
+    background: #2563eb;
+}
+
+.users-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.table > :not(caption) > * > * {
+    padding: 1rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #111827;
+}
+
+.user-email {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.role-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.role-superadmin {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.role-admin {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.role-participant {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.status-inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.action-btn {
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: none;
+    color: #4b5563;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: #f3f4f6;
+}
+
+.action-btn.edit {
+    color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.action-btn.delete {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+[data-bs-theme="dark"] .filter-card,
+[data-bs-theme="dark"] .users-card {
+    background: #2a2d3e;
+}
+
+[data-bs-theme="dark"] .filter-label {
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .role-btn,
+[data-bs-theme="dark"] .status-btn,
+[data-bs-theme="dark"] .clear-btn,
+[data-bs-theme="dark"] .action-btn {
+    border-color: #4b5563;
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .role-btn:hover,
+[data-bs-theme="dark"] .status-btn:hover,
+[data-bs-theme="dark"] .clear-btn:hover,
+[data-bs-theme="dark"] .action-btn:hover {
+    background: #374151;
+}
+
+[data-bs-theme="dark"] .search-input {
+    background: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
+[data-bs-theme="dark"] .user-name {
+    color: #e5e7eb;
+}
+
+[data-bs-theme="dark"] .user-email {
+    color: #9ca3af;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="filter-card">
+    <h3 class="filter-title">
+        <i class="bi bi-funnel"></i>
+        筛选条件
+    </h3>
+    <form id="filterForm" method="get">
+        <div class="filter-group">
+            <div class="filter-item">
+                <div class="filter-label">角色</div>
+                <div class="role-filter">
+                    <button type="button" class="role-btn active" data-role="all">
+                        <i class="bi bi-people"></i>
+                        全部
+                    </button>
+                    <button type="button" class="role-btn" data-role="superadmin">
+                        <i class="bi bi-shield-lock"></i>
+                        超级管理员
+                    </button>
+                    <button type="button" class="role-btn" data-role="admin">
+                        <i class="bi bi-person-gear"></i>
+                        管理员
+                    </button>
+                    <button type="button" class="role-btn" data-role="participant">
+                        <i class="bi bi-person"></i>
+                        普通用户
+                    </button>
+                </div>
+            </div>
+            
+            <div class="filter-item">
+                <div class="filter-label">状态</div>
+                <div class="status-filter">
+                    <button type="button" class="status-btn active" data-status="all">
+                        <i class="bi bi-circle"></i>
+                        全部
+                    </button>
+                    <button type="button" class="status-btn" data-status="active">
+                        <i class="bi bi-check-circle"></i>
+                        已激活
+                    </button>
+                    <button type="button" class="status-btn" data-status="inactive">
+                        <i class="bi bi-x-circle"></i>
+                        未激活
+                    </button>
+                </div>
+            </div>
+            
+            <div class="filter-item">
+                <div class="filter-label">搜索</div>
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control search-input" name="search" 
+                           placeholder="搜索用户名或邮箱...">
+                </div>
+            </div>
+            
+            <div class="filter-item">
+                <div class="filter-actions">
+                    <button type="button" class="clear-btn" onclick="clearFilters()">
+                        <i class="bi bi-x-circle"></i>
+                        清除筛选
+                    </button>
+                    <button type="submit" class="apply-btn">
+                        <i class="bi bi-check-circle"></i>
+                        应用筛选
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <input type="hidden" name="role" id="roleInput" value="all">
+        <input type="hidden" name="status" id="statusInput" value="all">
+    </form>
+</div>
+
+<div class="users-card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>用户信息</th>
+                    <th>角色</th>
+                    <th>状态</th>
+                    <th>注册时间</th>
+                    <th>最后登录</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                {{ user.username[0]|upper }}
+                            </div>
+                            <div class="user-meta">
+                                <span class="user-name">{{ user.username }}</span>
+                                <span class="user-email">{{ user.email }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="role-badge role-{{ user.role }}">
+                            {% if user.role == 'superadmin' %}
+                            超级管理员
+                            {% elif user.role == 'admin' %}
+                            管理员
+                            {% else %}
+                            普通用户
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ 'active' if user.is_active else 'inactive' }}">
+                            {{ '已激活' if user.is_active else '未激活' }}
+                        </span>
+                    </td>
+                    <td>{{ user.local_created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ user.local_last_login.strftime('%Y-%m-%d %H:%M') if user.local_last_login else '从未登录' }}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('superadmin.edit_user', id=user.id) }}" 
+                               class="action-btn edit" title="编辑用户">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if current_user.id != user.id %}
+                            <button type="button" class="action-btn delete" 
+                                    onclick="confirmDelete({{ user.id }})" title="删除用户">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 删除确认对话框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这个用户吗？此操作不可恢复。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="post">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 角色筛选按钮点击处理
+document.querySelectorAll('.role-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('roleInput').value = this.dataset.role;
+    });
+});
+
+// 状态筛选按钮点击处理
+document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById('statusInput').value = this.dataset.status;
+    });
+});
+
+// 修改表单提交处理
+document.getElementById('filterForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const role = document.getElementById('roleInput').value;
+    const status = document.getElementById('statusInput').value;
+    const search = document.querySelector('.search-input').value;
+    
+    const url = new URL(window.location);
+    // 清除现有的查询参数
+    url.searchParams.delete('role');
+    url.searchParams.delete('status');
+    url.searchParams.delete('search');
+    
+    // 只有当选择了非"全部"选项时才添加参数
+    if (role && role !== 'all') {
+        url.searchParams.set('role', role);
+    }
+    if (status && status !== 'all') {
+        url.searchParams.set('status', status);
+    }
+    if (search && search.trim() !== '') {
+        url.searchParams.set('search', search.trim());
+    }
+    
+    window.location = url;
+});
+
+// 清除筛选
+function clearFilters() {
+    const url = new URL(window.location);
+    url.search = ''; // 清除所有查询参数
+    window.location = url;
+}
+
+// 删除确认
+function confirmDelete(userId) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const form = document.getElementById('deleteForm');
+    form.action = "{{ url_for('superadmin.delete_user', id=0) }}".replace('0', userId);
+    modal.show();
+}
+
+// 从URL参数中恢复筛选状态
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    
+    const role = params.get('role') || 'all';
+    const status = params.get('status') || 'all';
+    const search = params.get('search') || '';
+    
+    document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if(btn.dataset.role === role) btn.classList.add('active');
+    });
+    
+    document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if(btn.dataset.status === status) btn.classList.add('active');
+    });
+    
+    document.getElementById('roleInput').value = role;
+    document.getElementById('statusInput').value = status;
+    document.querySelector('.search-input').value = search;
+});
+
+// 防止按钮点击触发表单提交
+document.querySelectorAll('button[type="button"]').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+    });
+});
+</script>
+{% endblock %} 

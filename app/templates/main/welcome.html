@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}欢迎来到心理学实验管理系统{% endblock %}
+
+{% block styles %}
+<style>
+    .hero-section {
+        min-height: 100vh;
+        background: 
+            radial-gradient(circle at 0% 0%, rgba(var(--primary-rgb), 0.15), transparent 50%),
+            radial-gradient(circle at 100% 100%, rgba(var(--secondary-rgb), 0.15), transparent 50%);
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 4rem 0;
+    }
+
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        animation: titleSlide 1s ease-out;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: var(--text-color);
+        opacity: 0.8;
+        margin-bottom: 2.5rem;
+        max-width: 600px;
+        line-height: 1.6;
+        animation: subtitleSlide 1s ease-out 0.3s both;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        animation: buttonsAppear 1s ease-out 0.6s both;
+    }
+
+    .btn-hero {
+        padding: 1rem 2.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-hero.btn-primary {
+        background: var(--primary-gradient);
+        border: none;
+        box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
+    }
+
+    .btn-hero.btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.4);
+    }
+
+    .btn-hero.btn-outline {
+        border: 2px solid var(--primary-color);
+        background: transparent;
+        color: var(--primary-color);
+    }
+
+    .btn-hero.btn-outline:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.2);
+    }
+
+    /* 装饰图形样式 */
+    .decoration-container {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 50%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .decoration-item {
+        position: absolute;
+        border-radius: 20px;
+        background: linear-gradient(135deg, 
+            rgba(var(--primary-rgb), 0.2),
+            rgba(var(--secondary-rgb), 0.2)
+        );
+        box-shadow: 
+            0 8px 32px rgba(var(--primary-rgb), 0.1),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+    }
+
+    .decoration-circle {
+        border-radius: 50%;
+    }
+
+    .decoration-1 {
+        width: 200px;
+        height: 200px;
+        top: 15%;
+        right: 15%;
+        animation: float1 6s ease-in-out infinite;
+    }
+
+    .decoration-2 {
+        width: 120px;
+        height: 120px;
+        top: 45%;
+        right: 25%;
+        animation: float2 8s ease-in-out infinite;
+    }
+
+    .decoration-3 {
+        width: 160px;
+        height: 160px;
+        top: 65%;
+        right: 18%;
+        animation: float3 7s ease-in-out infinite;
+    }
+
+    .decoration-4 {
+        width: 100px;
+        height: 100px;
+        transform: rotate(45deg);
+        top: 25%;
+        right: 35%;
+        animation: float4 9s ease-in-out infinite;
+    }
+
+    .decoration-5 {
+        width: 140px;
+        height: 140px;
+        transform: rotate(45deg);
+        top: 55%;
+        right: 40%;
+        animation: float5 10s ease-in-out infinite;
+    }
+
+    @keyframes float1 {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(-20px, 20px) rotate(5deg); }
+    }
+
+    @keyframes float2 {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(20px, -20px) rotate(-5deg); }
+    }
+
+    @keyframes float3 {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(-15px, -15px) rotate(3deg); }
+    }
+
+    @keyframes float4 {
+        0%, 100% { transform: translate(0, 0) rotate(45deg); }
+        50% { transform: translate(15px, 15px) rotate(50deg); }
+    }
+
+    @keyframes float5 {
+        0%, 100% { transform: translate(0, 0) rotate(45deg); }
+        50% { transform: translate(-20px, 10px) rotate(40deg); }
+    }
+
+    @keyframes titleSlide {
+        from { opacity: 0; transform: translateY(-30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes subtitleSlide {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 0.8; transform: translateY(0); }
+    }
+
+    @keyframes buttonsAppear {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 991.98px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+        }
+
+        .decoration-container {
+            opacity: 0.3;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        探索心理学的奥秘<br>
+                        参与科学研究的进程
+                    </h1>
+                    <p class="hero-subtitle">
+                        加入我们的心理学实验管理平台，体验专业的实验环境，
+                        为心理学研究贡献力量，同时获得知识与收获。
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-hero btn-primary">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>立即登录
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-hero btn-outline">
+                            <i class="bi bi-person-plus me-2"></i>注册账号
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="decoration-container">
+        <div class="decoration-item decoration-circle decoration-1"></div>
+        <div class="decoration-item decoration-circle decoration-2"></div>
+        <div class="decoration-item decoration-circle decoration-3"></div>
+        <div class="decoration-item decoration-4"></div>
+        <div class="decoration-item decoration-5"></div>
+    </div>
+</section>
+{% endblock %} 
+ 
+ 

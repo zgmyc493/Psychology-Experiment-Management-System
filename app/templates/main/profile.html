@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}个人信息维护{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3a0ca3;
+    --success-color: #4cc9f0;
+    --warning-color: #f72585;
+    --border-radius: 12px;
+    --box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --transition: all 0.3s ease;
+}
+
+.profile-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.profile-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.profile-subtitle {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+.profile-card {
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.profile-card__header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.profile-card__header h3 {
+    margin-bottom: 0;
+    font-weight: 600;
+    font-size: 1.4rem;
+}
+
+.profile-card__body {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: block;
+    color: #495057;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    width: 100%;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+    outline: none;
+}
+
+.school-info {
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.graduation-date {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.invalid-feedback {
+    color: var(--warning-color);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 1rem;
+}
+
+.btn-submit:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.alert-info {
+    background-color: rgba(76, 201, 240, 0.1);
+    border-left: 4px solid var(--success-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+}
+
+.profile-avatar i {
+    font-size: 3rem;
+    color: white;
+}
+
+.completion-indicator {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.completion-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .profile-card__body {
+        padding: 1.5rem;
+    }
+    
+    .graduation-date {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-title {
+        font-size: 1.75rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <h1 class="profile-title">个人信息维护</h1>
+        <p class="profile-subtitle">请完善您的个人信息，以便我们更好地为您推荐合适的实验</p>
+    </div>
+    
+    <div class="profile-card">
+        <div class="profile-card__header">
+            <div class="profile-avatar">
+                <i class="bi bi-person"></i>
+            </div>
+            <h3>{{ current_user.username }} 的个人资料</h3>
+            <div class="completion-indicator">
+                {% if current_user.is_profile_complete() %}
+                <span class="completion-badge">已完成</span>
+                {% else %}
+                <span class="completion-badge">未完成</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="profile-card__body">
+            {% if not current_user.is_profile_complete() %}
+            <div class="alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>提示：</strong>
+                请完善您的个人信息，未完善个人信息的用户无法参与实验。
+            </div>
+            {% endif %}
+            
+            <form method="POST">
+                {{ form.csrf_token }}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.gender.label(class="form-label") }}
+                            {{ form.gender(class="form-select") }}
+                            {% if form.gender.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.gender.errors[0] }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.age.label(class="form-label") }}
+                            {{ form.age(class="form-control", type="number", min="16", max="100") }}
+                            {% if form.age.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.age.errors[0] }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="school-info">
+                    <h4><i class="bi bi-building"></i> 学校信息</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.school.label(class="form-label") }}
+                                {{ form.school(class="form-control", placeholder="如：清华大学") }}
+                                {% if form.school.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.school.errors[0] }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.college.label(class="form-label") }}
+                                {{ form.college(class="form-control", placeholder="如：心理学系") }}
+                                {% if form.college.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.college.errors[0] }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mb-0">
+                        <label class="form-label">预计毕业时间</label>
+                        <div class="graduation-date">
+                            <div>
+                                {{ form.graduation_year(class="form-select") }}
+                                {% if form.graduation_year.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.graduation_year.errors[0] }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {{ form.graduation_month(class="form-select") }}
+                                {% if form.graduation_month.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.graduation_month.errors[0] }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form.phone.label(class="form-label") }}
+                    {{ form.phone(class="form-control", pattern="[0-9]{11}", placeholder="11位手机号码", title="请输入11位手机号码") }}
+                    {% if form.phone.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.phone.errors[0] }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn-submit">
+                    <i class="bi bi-check-circle"></i> 保存个人信息
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,757 @@
+{% extends "base.html" %}
+
+{% block title %}{{ experiment.title }} - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">{{ experiment.title }}</h3>
+            {% if current_user.is_authenticated %}
+                {% if current_user.role == 'admin' %}
+                <div>
+                    <!-- 移除了编辑实验和删除实验按钮 -->
+                </div>
+                {% elif not participation %}
+                    {% if experiment.status == 'active' %}
+                    <a href="{{ url_for('main.join_experiment', id=experiment.id) }}" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i> 报名参加
+                    </a>
+                    {% else %}
+                    <button class="btn btn-secondary" disabled>
+                        <i class="bi bi-clock"></i> 等待招募开始
+                    </button>
+                    {% endif %}
+                {% elif participation.status == 'started' and experiment.status == 'active' %}
+                    <a href="{{ url_for('main.complete_experiment', id=experiment.id) }}" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> 完成实验
+                    </a>
+                {% elif participation.status == 'completed' %}
+                    <span class="badge bg-success">已完成</span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="mb-4">
+                    <h5 class="mb-3">实验描述</h5>
+                    <p class="text-muted">{{ experiment.description }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5 class="mb-3">实验详情</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-clock text-primary"></i>
+                                    <strong>预计时长：</strong>{{ experiment.duration }}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-cash-coin text-success"></i>
+                                    <strong>实验报酬：</strong>{{ experiment.reward }}
+                                </li>
+                                {% if experiment.scheduled_start_time %}
+                                <li class="mb-2">
+                                    <i class="bi bi-calendar-event text-info"></i>
+                                    <strong>计划开始时间：</strong>{{ (experiment.scheduled_start_time + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M') }} (北京时间)
+                                    {% if experiment.should_auto_start %}
+                                    <span class="badge bg-warning">已到开始时间，等待自动开始</span>
+                                    {% endif %}
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-calendar text-primary"></i>
+                                    <strong>创建时间：</strong>{{ (experiment.created_at + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M') }} (北京时间)
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-person text-primary"></i>
+                                    <strong>创建者：</strong>{{ experiment.creator.username }}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if current_user.is_authenticated and current_user.id == experiment.creator_id %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">邀请码</h5>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" value="{{ experiment.invite_code }}" readonly id="inviteCode">
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyInviteCode()">复制</button>
+                        </div>
+                        <small class="text-muted">分享此邀请码给其他用户，让他们加入实验</small>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">邀请用户</h5>
+                        
+                        <!-- 批量筛选条件部分 -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">批量筛选条件</h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="bulkFilterForm" class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="minAge" class="form-label">最小年龄</label>
+                                        <input type="number" class="form-control" id="minAge" min="18" max="100" value="{{ experiment.min_age or '18' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="maxAge" class="form-label">最大年龄</label>
+                                        <input type="number" class="form-control" id="maxAge" min="18" max="100" value="{{ experiment.max_age or '60' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="gender" class="form-label">性别</label>
+                                        <select class="form-select" id="gender">
+                                            <option value="any" {% if experiment.required_gender == 'any' %}selected{% endif %}>不限</option>
+                                            <option value="male" {% if experiment.required_gender == 'male' %}selected{% endif %}>男性</option>
+                                            <option value="female" {% if experiment.required_gender == 'female' %}selected{% endif %}>女性</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="school" class="form-label">学校</label>
+                                        <input type="text" class="form-control" id="school" placeholder="学校名称">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label for="college" class="form-label">学院</label>
+                                        <input type="text" class="form-control" id="college" placeholder="学院名称">
+                                    </div>
+                                    <div class="col-12">
+                                        <button type="button" class="btn btn-primary w-100" onclick="applyBulkFilter()">
+                                            <i class="bi bi-filter"></i> 应用筛选条件
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <form action="{{ url_for('main.invite_to_experiment', id=experiment.id) }}" method="post" id="inviteForm">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <!-- 用户筛选和搜索 -->
+                            <div class="row mb-4">
+                                <div class="col-md-8 mb-3">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control" id="userSearch" placeholder="搜索用户名或邮箱..." onkeyup="filterUsers()">
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <select class="form-select" id="inviteFilter" onchange="filterUsers()">
+                                        <option value="all">全部用户</option>
+                                        <option value="notInvited">未邀请</option>
+                                        <option value="invited">已邀请</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-3">
+                                <div>
+                                    <span class="badge rounded-pill bg-primary" id="selectedCount">已选择: 0</span>
+                                    <span class="badge rounded-pill bg-secondary" id="filteredCount">显示: {{ available_users|length }}</span>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectAllVisible()">选择所有显示</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deselectAll()">取消选择</button>
+                                </div>
+                            </div>
+                            
+                            <div class="user-list-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+                                <div class="row" id="userList">
+                                    {% for user in available_users %}
+                                    <div class="col-md-4 mb-2 user-item" 
+                                         data-username="{{ user.username|lower }}" 
+                                         data-email="{{ user.email|lower }}" 
+                                         data-invited="{{ 'yes' if user.id in invited_user_ids else 'no' }}"
+                                         data-age="{{ user.age or '0' }}"
+                                         data-gender="{{ user.gender or 'none' }}"
+                                         data-school="{{ user.school or '' }}"
+                                         data-college="{{ user.college or '' }}">
+                                        <div class="card h-100">
+                                            <div class="card-body p-2">
+                                                <div class="form-check">
+                                                    <input class="form-check-input user-checkbox" type="checkbox" name="user_ids" value="{{ user.id }}" id="user{{ user.id }}" onchange="updateSelectedCount()">
+                                                    <label class="form-check-label" for="user{{ user.id }}">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="me-2">
+                                                                {% if user.avatar %}
+                                                                <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" class="rounded-circle" width="32" height="32" alt="{{ user.username }}">
+                                                                {% else %}
+                                                                <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background-color: rgba(var(--bs-primary-rgb), 0.1);">
+                                                                    <i class="bi bi-person text-primary" style="font-size: 18px;"></i>
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            <div>
+                                                                <div class="fw-medium">{{ user.username }}</div>
+                                                                <small class="text-muted d-block">{{ user.email }}</small>
+                                                                <small class="text-muted d-block">
+                                                                    {% if user.age %}年龄: {{ user.age }}岁{% endif %}
+                                                                    {% if user.gender %} | 性别: {{ '男' if user.gender == 'male' else '女' }}{% endif %}
+                                                                </small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mt-2 d-flex justify-content-between">
+                                                            {% if user.id in invited_user_ids %}
+                                                            <span class="badge bg-warning">已邀请</span>
+                                                            {% else %}
+                                                            <span class="badge bg-info">可邀请</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 text-end">
+                                <button type="submit" class="btn btn-primary" id="inviteButton" disabled>
+                                    <i class="bi bi-envelope"></i> 发送邀请
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- 我的参与状态（如果已参与） -->
+                {% if participation %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">我的参与状态</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-2">
+                                    <strong>当前状态：</strong>
+                                    {% if participation.status == 'pending' %}
+                                        <span class="badge bg-warning">待开始</span>
+                                    {% elif participation.status == 'started' %}
+                                        <span class="badge bg-primary">进行中</span>
+                                    {% elif participation.status == 'completed' %}
+                                        <span class="badge bg-success">已完成</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">已退出</span>
+                                    {% endif %}
+                                </p>
+                                {% if participation.started_at %}
+                                <p class="mb-2">
+                                    <strong>开始时间：</strong>
+                                    {{ participation.started_at.strftime('%Y-%m-%d %H:%M') }}
+                                </p>
+                                {% endif %}
+                                {% if participation.completed_at %}
+                                <p class="mb-2">
+                                    <strong>完成时间：</strong>
+                                    {{ participation.completed_at.strftime('%Y-%m-%d %H:%M') }}
+                                </p>
+                                {% endif %}
+                                {% if participation.status == 'completed' %}
+                                <p class="mb-0">
+                                    <strong>获得积分：</strong>
+                                    <span class="text-success">+10</span>
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if participation.status == 'pending' and experiment.status == 'active' %}
+                                <a href="{{ url_for('main.start_experiment', id=experiment.id) }}" 
+                                   class="btn btn-primary">
+                                    <i class="bi bi-play-circle"></i> 开始实验
+                                </a>
+                                {% elif participation.status == 'started' and experiment.status == 'active' %}
+                                <a href="{{ url_for('main.complete_experiment', id=experiment.id) }}" 
+                                   class="btn btn-success">
+                                    <i class="bi bi-check-circle"></i> 完成实验
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if experiment.external_url and participation.status == 'started' and experiment.status == 'active' %}
+                        <div class="mt-4">
+                            <a href="{{ experiment.external_url }}" 
+                               class="btn btn-outline-primary w-100" 
+                               target="_blank">
+                                <i class="bi bi-box-arrow-up-right"></i> 前往实验平台
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">实验统计</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>参与人数</span>
+                                    <strong>{{ experiment.participations.count() }}</strong>
+                                </div>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>完成人数</span>
+                                    <strong>{{ experiment.participations.filter_by(status='completed').count() }}</strong>
+                                </div>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: 60%"></div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">实验管理</h5>
+                        <div class="d-grid gap-2">
+                            {% if experiment.status == 'draft' %}
+                                {% if experiment.scheduled_start_time and now and experiment.scheduled_start_time > now %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-clock"></i>
+                                    <strong>计划开始时间：</strong>{{ (experiment.scheduled_start_time + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M') }} (北京时间)
+                                    <div class="mt-1 small">
+                                        实验将在设定时间自动开始招募。
+                                        <span id="scheduled-countdown">
+                                            距离开始还有：正在计算...
+                                        </span>
+                                    </div>
+                                    <script>
+                                        // 设置计划开始时间(UTC时间)
+                                        const futureScheduledTime = new Date("{{ experiment.scheduled_start_time.strftime('%Y-%m-%d %H:%M:%S') }} UTC");
+                                        
+                                        function updateFutureCountdown() {
+                                            // 获取当前时间
+                                            const now = new Date();
+                                            
+                                            // 计算剩余时间(毫秒)
+                                            const diff = futureScheduledTime - now;
+                                            
+                                            // 如果已经到了或超过计划时间
+                                            if (diff <= 0) {
+                                                document.getElementById("scheduled-countdown").innerHTML = 
+                                                    "已到达计划时间，实验即将开启...";
+                                                // 5分钟后自动刷新页面查看状态
+                                                setTimeout(function() {
+                                                    location.reload();
+                                                }, 300000); // 5分钟
+                                                return;
+                                            }
+                                            
+                                            // 计算剩余的天、小时、分钟和秒
+                                            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                                            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                                            
+                                            // 显示倒计时
+                                            let countdownText = "距离开始还有：";
+                                            if (days > 0) countdownText += days + "天";
+                                            if (hours > 0) countdownText += hours + "小时";
+                                            if (minutes > 0) countdownText += minutes + "分钟";
+                                            countdownText += seconds + "秒";
+                                            
+                                            document.getElementById("scheduled-countdown").innerHTML = countdownText;
+                                        }
+                                        
+                                        // 立即更新一次
+                                        updateFutureCountdown();
+                                        
+                                        // 每秒更新倒计时
+                                        setInterval(updateFutureCountdown, 1000);
+                                    </script>
+                                </div>
+                                {% endif %}
+                                
+                                {% if experiment.scheduled_start_time and now and experiment.scheduled_start_time <= now %}
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>提示：</strong>已到计划开始时间 {{ (experiment.scheduled_start_time + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M') }} (北京时间)，但实验尚未自动开启，
+                                    系统将尝试再次检查并启动实验。
+                                    <script>
+                                        // 5分钟后自动刷新页面
+                                        setTimeout(function() {
+                                            location.reload();
+                                        }, 300000); // 5分钟
+                                    </script>
+                                </div>
+                                {% endif %}
+                            <form action="{{ url_for('main.toggle_experiment_status', id=experiment.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-play-fill"></i> 立即开始招募
+                                </button>
+                            </form>
+                            {% elif experiment.status == 'active' %}
+                            <form action="{{ url_for('main.toggle_experiment_status', id=experiment.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-outline-warning w-100">
+                                    <i class="bi bi-pause-fill"></i> 结束招募
+                                </button>
+                            </form>
+                            {% endif %}
+                            
+                            <a href="{{ url_for('main.edit_experiment', id=experiment.id) }}" class="btn btn-outline-primary">
+                                <i class="bi bi-gear"></i> 实验设置
+                            </a>
+                            
+                            <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#participantsModal">
+                                <i class="bi bi-people"></i> 查看参与者
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 参与者列表模态框 -->
+                <div class="modal fade" id="participantsModal" tabindex="-1" aria-labelledby="participantsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="participantsModalLabel">实验参与者列表</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <ul class="nav nav-tabs mb-3" id="participantsTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-participants" type="button" role="tab" aria-controls="all-participants" aria-selected="true">全部</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="ongoing-tab" data-bs-toggle="tab" data-bs-target="#ongoing-participants" type="button" role="tab" aria-controls="ongoing-participants" aria-selected="false">进行中</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-participants" type="button" role="tab" aria-controls="completed-participants" aria-selected="false">已完成</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="participantsTabContent">
+                                    <div class="tab-pane fade show active" id="all-participants" role="tabpanel" aria-labelledby="all-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>用户名</th>
+                                                        <th>开始时间</th>
+                                                        <th>完成时间</th>
+                                                        <th>状态</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for p in experiment.participations %}
+                                                    <tr>
+                                                        <td>{{ p.user.username }}</td>
+                                                        <td>{{ p.started_at.strftime('%Y-%m-%d %H:%M') if p.started_at else '未开始' }}</td>
+                                                        <td>{% if p.completed_at %}{{ p.completed_at.strftime('%Y-%m-%d %H:%M') }}{% else %}未完成{% endif %}</td>
+                                                        <td>
+                                                            {% if p.status == 'pending' %}
+                                                            <span class="badge bg-warning">待开始</span>
+                                                            {% elif p.status == 'started' %}
+                                                            <span class="badge bg-primary">进行中</span>
+                                                            {% elif p.status == 'completed' %}
+                                                            <span class="badge bg-success">已完成</span>
+                                                            {% else %}
+                                                            <span class="badge bg-danger">已退出</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="ongoing-participants" role="tabpanel" aria-labelledby="ongoing-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>用户名</th>
+                                                        <th>开始时间</th>
+                                                        <th>状态</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for p in experiment.participations if p.status == 'started' %}
+                                                    <tr>
+                                                        <td>{{ p.user.username }}</td>
+                                                        <td>{{ p.started_at.strftime('%Y-%m-%d %H:%M') if p.started_at else '未开始' }}</td>
+                                                        <td><span class="badge bg-primary">进行中</span></td>
+                                                    </tr>
+                                                    {% else %}
+                                                    <tr>
+                                                        <td colspan="3" class="text-center">暂无进行中的参与者</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="completed-participants" role="tabpanel" aria-labelledby="completed-tab">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>用户名</th>
+                                                        <th>开始时间</th>
+                                                        <th>完成时间</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for p in experiment.participations if p.status == 'completed' %}
+                                                    <tr>
+                                                        <td>{{ p.user.username }}</td>
+                                                        <td>{{ p.started_at.strftime('%Y-%m-%d %H:%M') if p.started_at else '未开始' }}</td>
+                                                        <td>{{ p.completed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                    </tr>
+                                                    {% else %}
+                                                    <tr>
+                                                        <td colspan="3" class="text-center">暂无已完成的参与者</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ super() }}
+<script>
+function copyInviteCode() {
+    var copyText = document.getElementById("inviteCode");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    
+    // 显示复制成功提示
+    alert('邀请码已复制到剪贴板！');
+}
+
+// 当前显示的用户数量
+let filteredUsersCount = {{ available_users|length }};
+
+// 用户筛选函数
+function filterUsers() {
+    const searchText = document.getElementById('userSearch').value.toLowerCase();
+    const filterValue = document.getElementById('inviteFilter').value;
+    const userItems = document.getElementsByClassName('user-item');
+    
+    filteredUsersCount = 0;
+    
+    Array.from(userItems).forEach(item => {
+        const username = item.dataset.username;
+        const email = item.dataset.email;
+        const invited = item.dataset.invited;
+        
+        // 匹配搜索文本
+        const matchesSearch = username.includes(searchText) || email.includes(searchText);
+        
+        // 匹配邀请状态筛选
+        let matchesFilter = true;
+        if (filterValue === 'invited') {
+            matchesFilter = invited === 'yes';
+        } else if (filterValue === 'notInvited') {
+            matchesFilter = invited === 'no';
+        }
+        
+        // 应用批量筛选条件
+        const matchesBulkFilter = checkBulkFilterMatch(item);
+        
+        // 根据筛选条件显示或隐藏
+        if (matchesSearch && matchesFilter && matchesBulkFilter) {
+            item.style.display = '';
+            filteredUsersCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // 更新显示数量
+    document.getElementById('filteredCount').textContent = `显示: ${filteredUsersCount}`;
+    
+    // 如果没有选中的用户，禁用邀请按钮
+    updateInviteButtonState();
+}
+
+// 检查用户是否匹配批量筛选条件
+function checkBulkFilterMatch(userItem) {
+    // 获取筛选条件值
+    const minAgeFilter = parseInt(document.getElementById('minAge').value || 0);
+    const maxAgeFilter = parseInt(document.getElementById('maxAge').value || 100);
+    const genderFilter = document.getElementById('gender').value;
+    const schoolFilter = document.getElementById('school').value.toLowerCase();
+    const collegeFilter = document.getElementById('college').value.toLowerCase();
+    
+    // 获取用户属性
+    const userAge = parseInt(userItem.dataset.age || 0);
+    const userGender = userItem.dataset.gender;
+    const userSchool = userItem.dataset.school.toLowerCase();
+    const userCollege = userItem.dataset.college.toLowerCase();
+    
+    // 检查年龄范围
+    if (userAge < minAgeFilter || (maxAgeFilter > 0 && userAge > maxAgeFilter)) {
+        return false;
+    }
+    
+    // 检查性别
+    if (genderFilter !== 'any' && userGender !== genderFilter) {
+        return false;
+    }
+    
+    // 检查学校
+    if (schoolFilter && !userSchool.includes(schoolFilter)) {
+        return false;
+    }
+    
+    // 检查学院
+    if (collegeFilter && !userCollege.includes(collegeFilter)) {
+        return false;
+    }
+    
+    return true;
+}
+
+// 应用批量筛选条件
+function applyBulkFilter() {
+    filterUsers();
+}
+
+// 更新选中用户计数
+function updateSelectedCount() {
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    const count = checkedBoxes.length;
+    
+    document.getElementById('selectedCount').textContent = `已选择: ${count}`;
+    updateInviteButtonState();
+}
+
+// 更新邀请按钮状态
+function updateInviteButtonState() {
+    const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+    const inviteButton = document.getElementById('inviteButton');
+    
+    inviteButton.disabled = checkedBoxes.length === 0;
+}
+
+// 选择所有可见用户
+function selectAllVisible() {
+    const visibleUsers = document.querySelectorAll('.user-item[style=""]');
+    
+    visibleUsers.forEach(user => {
+        const checkbox = user.querySelector('.user-checkbox');
+        checkbox.checked = true;
+    });
+    
+    updateSelectedCount();
+}
+
+// 取消选择所有用户
+function deselectAll() {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    updateSelectedCount();
+}
+
+// 页面加载完成后初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化选中计数
+    updateSelectedCount();
+    
+    // 初始化筛选显示
+    filterUsers();
+});
+</script>
+{% if experiment.is_scheduled and experiment.status == 'draft' %}
+<script>
+    // 计算剩余时间
+    function updateCountdown() {
+        const now = new Date();
+        const scheduledTime = new Date('{{ experiment.scheduled_start_time.strftime("%Y-%m-%d %H:%M:%S") }}');
+        const diffMs = scheduledTime - now;
+        
+        if (diffMs <= 0) {
+            // 时间已到，刷新页面
+            document.getElementById('countdown').innerHTML = '计划时间已到，正在检查状态...';
+            setTimeout(() => {
+                location.reload();
+            }, 5000); // 5秒后刷新页面
+            return;
+        }
+        
+        // 计算剩余时间
+        const diffSec = Math.floor(diffMs / 1000);
+        const days = Math.floor(diffSec / 86400);
+        const hours = Math.floor((diffSec % 86400) / 3600);
+        const minutes = Math.floor((diffSec % 3600) / 60);
+        const seconds = diffSec % 60;
+        
+        // 更新倒计时显示
+        let countdownText = '距离自动开始还有: ';
+        if (days > 0) countdownText += `${days}天 `;
+        countdownText += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('countdown').innerHTML = countdownText;
+    }
+    
+    // 添加倒计时元素
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusBadge = document.querySelector('.status-badge');
+        if (statusBadge) {
+            const countdownEl = document.createElement('div');
+            countdownEl.id = 'countdown';
+            countdownEl.className = 'mt-2 text-info';
+            statusBadge.parentNode.insertBefore(countdownEl, statusBadge.nextSibling);
+            
+            // 立即更新一次倒计时
+            updateCountdown();
+            
+            // 每秒更新一次倒计时
+            setInterval(updateCountdown, 1000);
+        }
+    });
+    
+    // 如果已经到了预定时间但状态没有改变，5分钟后自动刷新页面
+    const scheduledTime = new Date('{{ experiment.scheduled_start_time.strftime("%Y-%m-%d %H:%M:%S") }}');
+    const now = new Date();
+    if (scheduledTime <= now) {
+        setTimeout(() => {
+            location.reload();
+        }, 300000); // 5分钟后自动刷新
+    }
+</script>
+{% endif %}
+{% endblock %}
+{% endblock %} 

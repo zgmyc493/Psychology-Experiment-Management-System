@@ -1,0 +1,219 @@
+{% extends "superadmin/base_admin.html" %}
+
+{% block title %}创建新用户{% endblock %}
+
+{% block page_title %}创建新用户{% endblock %}
+
+{% block styles %}
+<style>
+.new-user-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.password-strength {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.password-strength.weak {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.password-strength.medium {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.password-strength.strong {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+[data-bs-theme="dark"] .new-user-card {
+    background: #2a2d3e;
+}
+
+[data-bs-theme="dark"] .form-text {
+    color: #9ca3af;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="new-user-card">
+    <form method="post" action="{{ url_for('superadmin.new_user') }}" id="newUserForm">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">用户名</label>
+                <input type="text" class="form-control" name="username" required minlength="3" maxlength="20">
+                <div class="form-text">3-20个字符，只能包含字母、数字和下划线</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">邮箱</label>
+                <input type="email" class="form-control" name="email" required>
+                <div class="form-text">用于接收系统通知和重置密码</div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">密码</label>
+                <input type="password" class="form-control" name="password" id="password" required minlength="8">
+                <div class="form-text">至少8个字符，包含大小写字母、数字和特殊字符</div>
+                <div id="passwordStrength" class="password-strength"></div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">确认密码</label>
+                <input type="password" class="form-control" id="confirmPassword" required>
+                <div class="form-text">再次输入密码以确认</div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">用户角色</label>
+                <select class="form-select" name="role" required>
+                    <option value="participant">普通用户</option>
+                    <option value="admin">管理员</option>
+                </select>
+                <div class="form-text">选择用户的权限级别</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">账号状态</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="is_active" checked>
+                    <label class="form-check-label">立即激活账号</label>
+                </div>
+                <div class="form-text">未激活的账号无法登录系统</div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <a href="{{ url_for('superadmin.user_list') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-2"></i>返回用户列表
+            </a>
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                <i class="bi bi-person-plus me-2"></i>创建用户
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkPasswordStrength(password) {
+    let strength = 0;
+    
+    // 长度检查
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    
+    // 包含数字
+    if (/\d/.test(password)) strength++;
+    
+    // 包含小写字母
+    if (/[a-z]/.test(password)) strength++;
+    
+    // 包含大写字母
+    if (/[A-Z]/.test(password)) strength++;
+    
+    // 包含特殊字符
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    
+    return strength;
+}
+
+function updatePasswordStrength() {
+    const password = document.getElementById('password').value;
+    const strengthDiv = document.getElementById('passwordStrength');
+    const strength = checkPasswordStrength(password);
+    
+    if (password.length === 0) {
+        strengthDiv.className = 'password-strength';
+        strengthDiv.textContent = '';
+    } else if (strength <= 2) {
+        strengthDiv.className = 'password-strength weak';
+        strengthDiv.textContent = '密码强度：弱';
+    } else if (strength <= 4) {
+        strengthDiv.className = 'password-strength medium';
+        strengthDiv.textContent = '密码强度：中';
+    } else {
+        strengthDiv.className = 'password-strength strong';
+        strengthDiv.textContent = '密码强度：强';
+    }
+}
+
+function validateForm() {
+    const form = document.getElementById('newUserForm');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // 检查所有必填字段
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value) {
+            isValid = false;
+        }
+    });
+    
+    // 检查密码匹配
+    if (password.value !== confirmPassword.value) {
+        isValid = false;
+    }
+    
+    // 检查密码强度
+    if (checkPasswordStrength(password.value) <= 2) {
+        isValid = false;
+    }
+    
+    submitBtn.disabled = !isValid;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('newUserForm');
+    const password = document.getElementById('password');
+    
+    // 监听密码输入以更新强度指示器
+    password.addEventListener('input', updatePasswordStrength);
+    
+    // 监听所有输入以验证表单
+    form.addEventListener('input', validateForm);
+    
+    // 提交前再次验证
+    form.addEventListener('submit', function(e) {
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirmPassword');
+        
+        if (password.value !== confirmPassword.value) {
+            e.preventDefault();
+            alert('两次输入的密码不匹配');
+        }
+        
+        if (checkPasswordStrength(password.value) <= 2) {
+            e.preventDefault();
+            alert('密码强度太弱，请设置更复杂的密码');
+        }
+    });
+});
+</script>
+{% endblock %} 

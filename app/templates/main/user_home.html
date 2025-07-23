@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}我的首页{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--secondary-rgb), 0.1));
+        padding: 3rem 0;
+        margin: -1.5rem -1.5rem 2rem -1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
+    }
+
+    .welcome-message {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 1.5rem;
+        background: var(--primary-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        animation: fadeIn 0.5s ease-out 0.2s both;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(var(--primary-rgb), 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card:hover::before {
+        opacity: 1;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: var(--text-color);
+        opacity: 0.8;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .content-section {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(var(--primary-rgb), 0.1);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--text-color);
+    }
+
+    .section-title i {
+        color: var(--primary-color);
+        font-size: 1.75rem;
+    }
+
+    .experiment-card {
+        background: var(--bg-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(var(--primary-rgb), 0.1);
+    }
+
+    .experiment-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .experiment-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+
+    .experiment-info {
+        color: var(--text-color);
+        opacity: 0.8;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+    }
+
+    .experiment-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+        color: var(--text-color);
+        opacity: 0.8;
+    }
+
+    .notification-card {
+        background: var(--bg-color);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(var(--primary-rgb), 0.1);
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .notification-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .notification-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-color);
+    }
+
+    .notification-time {
+        font-size: 0.85rem;
+        color: var(--text-color);
+        opacity: 0.7;
+    }
+
+    .view-all-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .view-all-link:hover {
+        transform: translateX(5px);
+        color: var(--primary-color);
+    }
+
+    .quick-actions {
+        background: var(--card-bg);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(var(--primary-rgb), 0.1);
+    }
+
+    .quick-actions-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--secondary-rgb), 0.1));
+        border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+    }
+
+    .quick-actions-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--text-color);
+    }
+
+    .action-link {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        color: var(--text-color);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-bottom: 1px solid rgba(var(--primary-rgb), 0.1);
+    }
+
+    .action-link:last-child {
+        border-bottom: none;
+    }
+
+    .action-link i {
+        font-size: 1.25rem;
+        margin-right: 1rem;
+        color: var(--primary-color);
+        transition: all 0.3s ease;
+    }
+
+    .action-link:hover {
+        background: rgba(var(--primary-rgb), 0.05);
+        color: var(--primary-color);
+    }
+
+    .action-link:hover i {
+        transform: scale(1.1);
+    }
+
+    .badge {
+        padding: 0.5em 1em;
+        border-radius: 50rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .badge.bg-success {
+        background: rgba(var(--success-rgb), 0.1) !important;
+        color: var(--success-color);
+    }
+
+    .badge.bg-warning {
+        background: rgba(var(--warning-rgb), 0.1) !important;
+        color: var(--warning-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1 class="welcome-message">欢迎回来，{{ current_user.username }}</h1>
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.total_experiments }}</div>
+                <div class="stat-label">参与实验</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.completed_experiments }}</div>
+                <div class="stat-label">完成实验</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.points }}</div>
+                <div class="stat-label">积分</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ user_stats.completion_rate }}%</div>
+                <div class="stat-label">完成率</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8">
+            {% if recent_participations %}
+            <div class="content-section mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">
+                        <i class="bi bi-clock-history"></i>
+                        最近参与
+                    </h2>
+                    <a href="{{ url_for('main.experiment') }}" class="view-all-link">
+                        查看全部 <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                {% for participation in recent_participations %}
+                <div class="experiment-card">
+                    <h3 class="experiment-title">{{ participation.experiment.title }}</h3>
+                    <p class="experiment-info">{{ participation.experiment.description[:150] }}...</p>
+                    <div class="experiment-meta">
+                        <div>
+                            <i class="bi bi-calendar me-2"></i>
+                            {% if participation.started_at %}
+                                {{ participation.started_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                未开始
+                            {% endif %}
+                        </div>
+                        <div>
+                            <span class="badge bg-{{ 'success' if participation.status == 'completed' else 'warning' }}">
+                                {{ '已完成' if participation.status == 'completed' else '进行中' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if available_experiments %}
+            <div class="content-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">
+                        <i class="bi bi-lightning"></i>
+                        推荐实验
+                    </h2>
+                    <a href="{{ url_for('main.available_experiments') }}" class="view-all-link">
+                        查看全部 <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                {% for experiment in available_experiments %}
+                <div class="experiment-card">
+                    <h3 class="experiment-title">{{ experiment.title }}</h3>
+                    <p class="experiment-info">{{ experiment.description[:150] }}...</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="experiment-meta">
+                            <div class="me-4">
+                                <i class="bi bi-clock me-2"></i>
+                                预计时长：{{ experiment.duration }}分钟
+                            </div>
+                            <div>
+                                <i class="bi bi-star me-2"></i>
+                                奖励：{{ experiment.reward }}积分
+                            </div>
+                        </div>
+                        <a href="{{ url_for('main.experiment_detail', id=experiment.id) }}" 
+                           class="btn btn-primary btn-sm">
+                            查看详情
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            {% if notifications %}
+            <div class="content-section mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title mb-0">
+                        <i class="bi bi-bell"></i>
+                        未读通知
+                    </h2>
+                    <a href="{{ url_for('main.notifications') }}" class="view-all-link">
+                        查看全部 <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                {% for notification in notifications %}
+                <div class="notification-card">
+                    <div class="notification-title">{{ notification.title }}</div>
+                    <div class="notification-time">
+                        {{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="quick-actions">
+                <div class="quick-actions-header">
+                    <h3 class="quick-actions-title">快速操作</h3>
+                </div>
+                <div class="quick-actions-body">
+                    <div class="quick-join-experiment mb-3 p-3 border-bottom">
+                        <h4 class="h6 mb-3"><i class="bi bi-lightning-charge text-warning"></i> 通过邀请码加入实验</h4>
+                        <form method="post" action="{{ url_for('main.join_by_code') }}" class="d-flex gap-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="text" name="invite_code" class="form-control form-control-sm" 
+                                   placeholder="输入8位邀请码" required pattern="[A-Za-z0-9]{8}" 
+                                   title="邀请码应为8位字母和数字的组合">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <a href="{{ url_for('main.profile') }}" class="action-link">
+                        <i class="bi bi-person"></i>
+                        个人信息
+                    </a>
+                    <a href="{{ url_for('main.experiment') }}" class="action-link">
+                        <i class="bi bi-clipboard-data"></i>
+                        我的实验
+                    </a>
+                    <a href="{{ url_for('main.available_experiments') }}" class="action-link">
+                        <i class="bi bi-search"></i>
+                        浏览实验
+                    </a>
+                    <a href="{{ url_for('main.reservable_experiments') }}" class="action-link">
+                        <i class="bi bi-calendar-check"></i>
+                        预约实验
+                        {% if reservations_count > 0 %}
+                        <span class="badge bg-primary ms-auto">{{ reservations_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('auth.change_password') }}" class="action-link">
+                        <i class="bi bi-key"></i>
+                        修改密码
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

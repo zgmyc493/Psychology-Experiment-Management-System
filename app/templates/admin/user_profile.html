@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}用户个人信息{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.6em 1.5em;
+    background: none;
+    border: 0.15em solid #4B5563;
+    border-radius: 0.4em;
+    color: #4B5563;
+    font-weight: 600;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.back-button::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: #4B5563;
+    z-index: -1;
+    transform: translateX(-100%);
+    transition: all 0.3s;
+}
+
+.back-button:hover {
+    color: white;
+}
+
+.back-button:hover::before {
+    transform: translateX(0);
+}
+
+.back-button i {
+    transition: transform 0.3s;
+}
+
+.back-button:hover i {
+    transform: translateX(-3px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">用户个人信息</h2>
+                <a href="{{ url_for('admin.user_list') }}" class="back-button">
+                    <i class="bi bi-arrow-left"></i>返回用户列表
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-4">
+                        <h5 class="mb-3">基本信息</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-circle me-2 text-primary"></i>
+                                    <strong class="me-2">用户名：</strong>
+                                    <span>{{ user.username }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-envelope me-2 text-primary"></i>
+                                    <strong class="me-2">邮箱：</strong>
+                                    <span>{{ user.email }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-calendar me-2 text-primary"></i>
+                                    <strong class="me-2">注册时间：</strong>
+                                    <span>{{ user.local_created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-clock-history me-2 text-primary"></i>
+                                    <strong class="me-2">最后登录：</strong>
+                                    <span>{{ user.local_last_login.strftime('%Y-%m-%d %H:%M') if user.local_last_login else '从未登录' }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="mb-4">
+                        <h5 class="mb-3">个人信息</h5>
+                        {% if user.is_profile_complete() %}
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-gender-ambiguous me-2 text-primary"></i>
+                                    <strong class="me-2">性别：</strong>
+                                    <span>{{ '男' if user.gender == 'male' else '女' }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-person-badge me-2 text-primary"></i>
+                                    <strong class="me-2">年龄：</strong>
+                                    <span>{{ user.age }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-mortarboard me-2 text-primary"></i>
+                                    <strong class="me-2">毕业时间：</strong>
+                                    <span>{{ user.graduation_date.strftime('%Y年%m月') }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-building me-2 text-primary"></i>
+                                    <strong class="me-2">学校：</strong>
+                                    <span>{{ user.school }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-book me-2 text-primary"></i>
+                                    <strong class="me-2">学院：</strong>
+                                    <span>{{ user.college }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-telephone me-2 text-primary"></i>
+                                    <strong class="me-2">电话号码：</strong>
+                                    <span>{{ user.phone }}</span>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-check-circle me-2 text-primary"></i>
+                                    <strong class="me-2">参与资格：</strong>
+                                    <span class="badge bg-{{ 'success' if user.is_valid_participant() else 'danger' }}">
+                                        {{ '有效' if user.is_valid_participant() else '已失效' }}
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            该用户尚未完善个人信息
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

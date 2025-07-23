@@ -1,0 +1,306 @@
+{% extends "superadmin/base_admin.html" %}
+
+{% block title %}安全中心{% endblock %}
+
+{% block page_title %}安全中心{% endblock %}
+
+{% block styles %}
+<style>
+.security-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1.5rem;
+}
+
+.security-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.security-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--bs-primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.activity-content {
+    flex-grow: 1;
+}
+
+.activity-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.activity-time {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.activity-status {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+}
+
+.status-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.status-warning {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.status-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+[data-bs-theme="dark"] .security-card {
+    background: #2a2d3e;
+}
+
+[data-bs-theme="dark"] .stat-card {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .stat-label {
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .activity-item {
+    border-bottom-color: #4b5563;
+}
+
+[data-bs-theme="dark"] .activity-time {
+    color: #9ca3af;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="security-stats">
+    <div class="stat-card">
+        <div class="stat-value">{{ login_attempts }}</div>
+        <div class="stat-label">今日登录尝试</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ failed_logins }}</div>
+        <div class="stat-label">失败的登录</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ blocked_ips }}</div>
+        <div class="stat-label">已封禁IP</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ security_score }}</div>
+        <div class="stat-label">安全评分</div>
+    </div>
+</div>
+
+<div class="security-card">
+    <h3 class="security-title">
+        <i class="bi bi-shield-exclamation text-warning"></i>
+        安全警告
+    </h3>
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        发现{{ warning_count }}个需要注意的安全问题
+    </div>
+    <ul class="list-group">
+        {% for warning in security_warnings %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi {{ warning.icon }} me-2 text-warning"></i>
+                {{ warning.message }}
+            </div>
+            <a href="{{ warning.action_url }}" class="btn btn-sm btn-warning">
+                处理
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="security-card">
+    <h3 class="security-title">
+        <i class="bi bi-clock-history text-primary"></i>
+        最近活动
+    </h3>
+    <ul class="activity-list">
+        {% for activity in recent_activities %}
+        <li class="activity-item">
+            <div class="activity-icon bg-{{ activity.type }}-subtle text-{{ activity.type }}">
+                <i class="bi {{ activity.icon }}"></i>
+            </div>
+            <div class="activity-content">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="activity-title">{{ activity.title }}</div>
+                        <div class="activity-time">{{ activity.time }}</div>
+                    </div>
+                    <span class="activity-status status-{{ activity.status }}">
+                        {{ activity.status_text }}
+                    </span>
+                </div>
+                {% if activity.details %}
+                <div class="mt-2 text-muted">
+                    {{ activity.details }}
+                </div>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="security-card">
+    <h3 class="security-title">
+        <i class="bi bi-geo-alt text-danger"></i>
+        可疑IP活动
+    </h3>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>IP地址</th>
+                    <th>位置</th>
+                    <th>尝试次数</th>
+                    <th>最后尝试时间</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ip in suspicious_ips %}
+                <tr>
+                    <td>{{ ip.address }}</td>
+                    <td>{{ ip.location }}</td>
+                    <td>{{ ip.attempts }}</td>
+                    <td>{{ ip.last_attempt }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'danger' if ip.is_blocked else 'warning' }}">
+                            {{ '已封禁' if ip.is_blocked else '可疑' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if not ip.is_blocked %}
+                        <button type="button" class="btn btn-sm btn-danger" onclick="blockIP('{{ ip.address }}')">
+                            封禁
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="unblockIP('{{ ip.address }}')">
+                            解除封禁
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function blockIP(ip) {
+    if (confirm(`确定要封禁IP ${ip} 吗？`)) {
+        fetch('{{ url_for("superadmin.block_ip") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ ip: ip })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('操作失败：' + data.message);
+            }
+        });
+    }
+}
+
+function unblockIP(ip) {
+    if (confirm(`确定要解除IP ${ip} 的封禁吗？`)) {
+        fetch('{{ url_for("superadmin.unblock_ip") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ ip: ip })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('操作失败：' + data.message);
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 
